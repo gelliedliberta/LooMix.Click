@@ -1,0 +1,49 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.staging
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cache files
+*.cache
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+
+# Node modules (if any JavaScript tools are used)
+node_modules/
+
+# Composer (if using Composer)
+vendor/
+
+# Database dumps
+*.sql.gz
+*.sql.bak
+
+# Upload directories (except sample files)
+assets/uploads/*
+!assets/uploads/.gitkeep
+
+# Configuration backups
+config/*.backup
+config/*.bak
