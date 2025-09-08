@@ -62,8 +62,8 @@ Profesyonel, SEO uyumlu ve reklam dostu modern haber sitesi. Ham PHP ile gelişt
 
 ### 1. Projeyi İndirin
 ```bash
-git clone https://github.com/gelliedliberta/loomix-click.git
-cd loomix-click
+git clone https://github.com/gelliedliberta/loomix.click.git
+cd loomix.click
 ```
 
 ### 2. Veritabanını Kurun
@@ -446,8 +446,8 @@ Lütfen `code_standards.md` dosyasındaki kurallara uyun:
 
 ## 📞 Destek
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/gelliedliberta/loomix-click/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/gelliedliberta/loomix-click/discussions)
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/gelliedliberta/loomix.click/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/gelliedliberta/loomix.click/discussions)
 - 📧 **Email**: support@loomix.click
 - 🌐 **Website**: https://loomix.click
 
@@ -458,7 +458,7 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 ## 👥 Geliştiriciler
 
 - **Lead Developer**: [Your Name](https://github.com/gelliedliberta)
-- **Contributors**: [Contributors List](https://github.com/gelliedliberta/loomix-click/graphs/contributors)
+- **Contributors**: [Contributors List](https://github.com/gelliedliberta/loomix.click/graphs/contributors)
 
 ## 🙏 Teşekkürler
 

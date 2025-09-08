@@ -100,6 +100,10 @@ $router->get('/admin', 'AdminController@index');
 $router->get('/admin/login', 'AdminController@login');
 $router->post('/admin/auth', 'AdminController@authenticate');
 $router->get('/admin/cikis', 'AdminController@logout');
+// Profil
+$router->get('/admin/profil', 'AdminController@profile');
+$router->post('/admin/api/profile/save', 'AdminController@saveProfile');
+$router->post('/admin/api/profile/change-password', 'AdminController@changePassword');
 
 // Haber yönetimi
 $router->get('/admin/haberler', 'AdminController@news');

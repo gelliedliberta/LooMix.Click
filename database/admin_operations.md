@@ -317,3 +317,58 @@ ORDER BY last_login DESC
 ---
 
 *Bu dosya her veritabanı değişikliğinde güncellenir.*
+
+---
+
+### 2025-09-08: Admin Profil Sayfası ve API'leri
+
+Profil yönetimi için yeni endpoint'ler eklendi. Şema değişikliği yoktur; `admin_users` tablosu kullanılmaktadır.
+
+1) Profil Görüntüleme (UI)
+- Route: `GET /admin/profil`
+- Veriler: `admin_users` tablosundan aktif adminin `id, full_name, username, email, avatar, role, last_login, login_count, created_at, updated_at`
+
+2) Profil Kaydetme (API)
+- Route: `POST /admin/api/profile/save`
+- CSRF: Zorunlu (`csrf_token`)
+- Body (JSON):
+```
+{
+  "csrf_token": "...",
+  "full_name": "Ad Soyad",
+  "email": "user@example.com",
+  "avatar": "/assets/uploads/2025/09/xxxx.png"
+}
+```
+- Validasyon: `full_name` gereklidir; `email` format kontrolü; email benzersizliği (başka kullanıcıda olamaz).
+- İşlem: `admin_users` tablosunda giriş yapan kullanıcının kaydı güncellenir. `updated_at` set edilir.
+
+3) Şifre Değiştirme (API)
+- Route: `POST /admin/api/profile/change-password`
+- CSRF: Zorunlu (`csrf_token`)
+- Body (JSON):
+```
+{
+  "csrf_token": "...",
+  "current_password": "mevcut",
+  "new_password": "yenisifre",
+  "confirm_password": "yenisifre"
+}
+```
+- Validasyon: `new_password` min 6 karakter; `confirm_password` eşleşmeli.
+- Güvenlik: `current_password` `password_verify` ile doğrulanır.
+- İşlem: `admin_users.password` yeni hash ile güncellenir, `updated_at` set edilir.
+
+4) Avatar Yükleme
+- Mevcut endpoint yeniden kullanıldı: `POST /admin/upload-file`
+- Dönüş: `{ success: true, url: "/assets/uploads/YYYY/MM/unique.png", filename: "YYYY/MM/unique.png" }`
+- Sınırlar: `MAX_FILE_SIZE`, `ALLOWED_EXTENSIONS` (config)
+
+Etkilenen Dosyalar:
+- `index.php` → yeni route ve API endpoint'leri
+- `app/controllers/AdminController.php` → `profile`, `saveProfile`, `changePassword`
+- `templates/admin/profile/index.php` → yeni profil sayfası
+
+Notlar:
+- Tüm admin API isteklerinde merkezi CSRF kontrolü aktiftir; method-level doğrulama da yapılır.
+- Şema değişikliği yoktur; migration gerekmez.

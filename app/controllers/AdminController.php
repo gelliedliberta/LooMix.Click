@@ -1474,6 +1474,159 @@ class AdminController extends Controller {
             'stats' => $stats
         ], 'admin');
     }
+
+    /**
+     * Profil sayfası - mevcut admin kullanıcının bilgileri
+     */
+    public function profile() {
+        // Mevcut kullanıcı
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
+            $this->redirect('/admin/login');
+            return;
+        }
+
+        // Veritabanından güncel bilgileri çek
+        $user = $this->db->fetch("SELECT id, full_name, username, email, avatar, role, last_login, login_count, created_at, updated_at FROM admin_users WHERE id = :id", [
+            'id' => $currentUser['id']
+        ]);
+
+        $view = new View();
+        $view->render('admin/profile/index', [
+            'pageTitle' => 'Profilim - Admin',
+            'user' => $user,
+            'csrfToken' => $this->generateCsrfToken(),
+            'breadcrumb' => [
+                [ 'title' => 'Profil', 'url' => '' ]
+            ],
+            'currentUser' => $currentUser
+        ], 'admin');
+    }
+
+    /**
+     * Profil bilgilerini kaydet (full_name, email, avatar)
+     */
+    public function saveProfile() {
+        // CSRF doğrulama
+        if (!$this->verifyCsrfToken($this->post('csrf_token'))) {
+            $this->json(['error' => 'CSRF token hatalı'], 400);
+            return;
+        }
+
+        // Giriş yapmış kullanıcıyı al
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
+            $this->json(['error' => 'Oturum bulunamadı'], 401);
+            return;
+        }
+
+        $data = [
+            'full_name' => trim($this->post('full_name')),
+            'email' => trim($this->post('email')),
+            'avatar' => trim($this->post('avatar')),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        // Validasyon
+        $errors = [];
+        if (empty($data['full_name'])) {
+            $errors['full_name'] = 'Ad Soyad gereklidir';
+        }
+        if (empty($data['email'])) {
+            $errors['email'] = 'E-posta gereklidir';
+        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'Geçerli bir e-posta adresi girin';
+        }
+
+        if (!empty($errors)) {
+            $this->json(['error' => 'Validasyon hatası', 'errors' => $errors], 400);
+            return;
+        }
+
+        // Email benzersizliği (başkası kullanıyor mu?)
+        $existingEmail = $this->db->fetch(
+            "SELECT id FROM admin_users WHERE email = :email AND id != :id",
+            ['email' => $data['email'], 'id' => $currentUser['id']]
+        );
+        if ($existingEmail) {
+            $this->json(['error' => 'Bu e-posta adresi zaten kullanılıyor'], 400);
+            return;
+        }
+
+        $result = $this->db->update('admin_users', $data, 'id = :id', ['id' => $currentUser['id']]);
+
+        if ($result) {
+            // Session bilgisini güncelle
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['admin_user']['full_name'] = $data['full_name'];
+            // Profil resmi değiştiyse opsiyonel olarak saklayabiliriz
+            $this->json(['success' => true, 'message' => 'Profil bilgileriniz güncellendi']);
+        } else {
+            $this->json(['error' => 'Profil güncellenirken hata oluştu'], 500);
+        }
+    }
+
+    /**
+     * Şifre değiştir
+     */
+    public function changePassword() {
+        // CSRF doğrulama
+        if (!$this->verifyCsrfToken($this->post('csrf_token'))) {
+            $this->json(['error' => 'CSRF token hatalı'], 400);
+            return;
+        }
+
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
+            $this->json(['error' => 'Oturum bulunamadı'], 401);
+            return;
+        }
+
+        $currentPassword = (string)$this->post('current_password');
+        $newPassword = (string)$this->post('new_password');
+        $confirmPassword = (string)$this->post('confirm_password');
+
+        // Validasyon
+        $errors = [];
+        if (strlen($newPassword) < 6) {
+            $errors['new_password'] = 'Yeni şifre en az 6 karakter olmalıdır';
+        }
+        if ($newPassword !== $confirmPassword) {
+            $errors['confirm_password'] = 'Şifreler eşleşmiyor';
+        }
+        if (!empty($errors)) {
+            $this->json(['error' => 'Validasyon hatası', 'errors' => $errors], 400);
+            return;
+        }
+
+        // Kullanıcının mevcut hash'ini al
+        $user = $this->db->fetch("SELECT id, password FROM admin_users WHERE id = :id", ['id' => $currentUser['id']]);
+        if (!$user || empty($user['password'])) {
+            $this->json(['error' => 'Kullanıcı bulunamadı'], 404);
+            return;
+        }
+
+        // Mevcut şifre doğrulaması
+        if (!password_verify($currentPassword, $user['password'])) {
+            $this->json(['error' => 'Mevcut şifre hatalı'], 400);
+            return;
+        }
+
+        // Yeni şifre hashle ve kaydet
+        $hashed = password_hash($newPassword, PASSWORD_DEFAULT);
+        $saved = $this->db->update('admin_users', [
+            'password' => $hashed,
+            'updated_at' => date('Y-m-d H:i:s')
+        ], 'id = :id', ['id' => $currentUser['id']]);
+
+        if ($saved) {
+            $this->json(['success' => true, 'message' => 'Şifreniz güncellendi']);
+        } else {
+            $this->json(['error' => 'Şifre güncellenemedi'], 500);
+        }
+    }
     
     /**
      * Dashboard istatistikleri
