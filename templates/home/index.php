@@ -3,47 +3,75 @@
     <?php if (!empty($featuredNews)): ?>
     <section class="hero-section mb-5">
         <div class="row">
-            <div class="col-lg-8">               
-                <?php $mainFeatured = $featuredNews[0]; ?>
-                <!-- Main Featured News -->
-                <div class="featured-main position-relative mb-3">
-                    <a href="<?= url('/haber/' . $mainFeatured['slug']) ?>" class="text-decoration-none text-white">
-                        <div class="featured-image-wrapper position-relative overflow-hidden rounded-3" style="height: 400px;">
-                            <img src="<?= getImageUrl($mainFeatured['featured_image']) ?>" 
-                                 alt="<?= escape($mainFeatured['title']) ?>" 
-                                 class="w-100 h-100 object-fit-cover">
-                            <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"></div>
-                            <div class="position-absolute bottom-0 start-0 p-4 w-100">
-                                <span class="badge bg-<?= $mainFeatured['category_color'] ?: 'primary' ?> mb-2">
-                                    <?= escape($mainFeatured['category_name']) ?>
-                                </span>
-                                <h2 class="h3 text-white mb-2 fw-bold"><?= escape($mainFeatured['title']) ?></h2>
-                                <p class="text-light mb-2 opacity-75"><?= truncateText(strip_tags($mainFeatured['summary']), 120) ?></p>
-                                <div class="d-flex align-items-center text-light small opacity-75">
-                                    <i class="far fa-clock me-1"></i>
-                                    <?= formatDate($mainFeatured['publish_date'], 'd.m.Y H:i') ?>
-                                    <span class="mx-2">•</span>
-                                    <i class="far fa-eye me-1"></i>
-                                    <?= number_format($mainFeatured['view_count']) ?> görüntülenme
+            <div class="col-lg-8 mb-4 mb-lg-0">
+                <?php $slides = array_slice($featuredNews, 0, 5); ?>
+                <?php if (!empty($slides)): ?>
+                <!-- Main Featured Slider -->
+                <div id="featuredCarousel" class="carousel slide featured-main mb-3" data-bs-ride="carousel" data-bs-interval="5000">
+                    <?php if (count($slides) > 1): ?>
+                    <div class="carousel-indicators">
+                        <?php foreach ($slides as $idx => $slide): ?>
+                            <button type="button" data-bs-target="#featuredCarousel" data-bs-slide-to="<?= $idx ?>" class="<?= $idx === 0 ? 'active' : '' ?>" aria-current="<?= $idx === 0 ? 'true' : 'false' ?>" aria-label="Slide <?= $idx + 1 ?>"></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    <div class="carousel-inner">
+                        <?php foreach ($slides as $idx => $mainFeatured): ?>
+                        <div class="carousel-item <?= $idx === 0 ? 'active' : '' ?>">
+                            <a href="<?= url('/haber/' . $mainFeatured['slug']) ?>" class="text-decoration-none text-white">
+                                <div class="featured-image-wrapper position-relative overflow-hidden rounded-3" style="height: 400px;">
+                                    <img src="<?= getImageUrl($mainFeatured['featured_image']) ?>" 
+                                         alt="<?= escape($mainFeatured['title']) ?>" 
+                                         class="w-100 h-100 object-fit-cover">
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"></div>
+                                    <div class="position-absolute bottom-0 start-0 p-4 w-100">
+                                        <span class="badge bg-<?= $mainFeatured['category_color'] ?: 'primary' ?> mb-2">
+                                            <?= escape($mainFeatured['category_name']) ?>
+                                        </span>
+                                        <h2 class="h3 text-white mb-2 fw-bold"><?= escape($mainFeatured['title']) ?></h2>
+                                        <p class="text-light mb-2 opacity-75"><?= truncateText(strip_tags($mainFeatured['summary']), 120) ?></p>
+                                        <div class="d-flex align-items-center text-light small opacity-75">
+                                            <i class="far fa-clock me-1"></i>
+                                            <?= formatDate($mainFeatured['publish_date'], 'd.m.Y H:i') ?>
+                                            <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
+                                            <span class="mx-2">•</span>
+                                            <i class="far fa-eye me-1"></i>
+                                            <?= number_format($mainFeatured['view_count']) ?> görüntülenme
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
-                    </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php if (count($slides) > 1): ?>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#featuredCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Önceki</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#featuredCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Sonraki</span>
+                    </button>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
             
-            <!-- Side Featured News -->
+            <!-- Side Featured News (next 2 after slider) -->
             <div class="col-lg-4">
-                <?php if (count($featuredNews) > 1): ?>
-                    <?php for ($i = 1; $i < min(3, count($featuredNews)); $i++): ?>
-                        <?php $sideFeatured = $featuredNews[$i]; ?>
+                <?php $sideStart = min(5, count($featuredNews)); ?>
+                <?php $sideItems = array_slice($featuredNews, $sideStart, 2); ?>
+                <?php if (!empty($sideItems)): ?>
+                    <?php foreach ($sideItems as $sideFeatured): ?>
                         <div class="side-featured position-relative mb-3">
                             <a href="<?= url('/haber/' . $sideFeatured['slug']) ?>" class="text-decoration-none text-white">
                                 <div class="side-featured-wrapper position-relative overflow-hidden rounded-3" style="height: 190px;">
                                     <img src="<?= getImageUrl($sideFeatured['featured_image']) ?>" 
                                          alt="<?= escape($sideFeatured['title']) ?>" 
                                          class="w-100 h-100 object-fit-cover">
-                                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-40"></div>
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 bg-opacity-40"></div>
                                     <div class="position-absolute bottom-0 start-0 p-3 w-100">
                                         <span class="badge bg-<?= $sideFeatured['category_color'] ?: 'primary' ?> mb-2">
                                             <?= escape($sideFeatured['category_name']) ?>
@@ -57,7 +85,7 @@
                                 </div>
                             </a>
                         </div>
-                    <?php endfor; ?>
+                    <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -118,7 +146,7 @@
                 <?php if (!empty($latestNews)): ?>
                     <div class="row news-grid">
                         <?php foreach ($latestNews as $news): ?>
-                        <div class="col-md-6 mb-4">
+                        <div class="col-sm-6 mb-4">
                             <article class="news-card h-100">
                                 <div class="card border-0 shadow-sm h-100 hover-shadow">
                                     <div class="card-img-wrapper position-relative">
@@ -161,10 +189,12 @@
                                                 <i class="far fa-clock me-1"></i>
                                                 <?= formatDate($news['publish_date'], 'd.m.Y H:i') ?>
                                             </div>
+                                            <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                             <div class="d-flex align-items-center">
                                                 <i class="far fa-eye me-1"></i>
                                                 <?= number_format($news['view_count']) ?>
                                             </div>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -181,14 +211,16 @@
             </section>
             
             <!-- Content Ad -->
+            <?php if (ADS_ENABLED): ?>
             <div class="content-ad text-center mb-5">
                 <?= displayAd('content_inline') ?>
             </div>
+            <?php endif; ?>
             
         </div>
         
         <!-- Sidebar -->
-        <div class="col-lg-4">
+        <div class="col-lg-4 mt-4 mt-lg-0">
             <aside class="sidebar">
                 <!-- Popular News Widget -->
                 <?php if (!empty($popularNews)): ?>
@@ -214,10 +246,12 @@
                                         <?= truncateText($popular['title'], 80) ?>
                                     </a>
                                 </h4>
+                                <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                 <div class="small text-muted">
                                     <i class="far fa-eye me-1"></i>
                                     <?= number_format($popular['view_count']) ?> görüntülenme
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </article>
                         <?php endforeach; ?>
@@ -226,9 +260,11 @@
                 <?php endif; ?>
                 
                 <!-- Sidebar Ad -->
+                <?php if (ADS_ENABLED): ?>
                 <div class="sidebar-widget mb-4">
                     <?= displayAd('sidebar_square') ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Categories Widget -->
                 <?php if (!empty($categories)): ?>

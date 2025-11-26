@@ -452,6 +452,37 @@
                         </div>
                     </div>
                     
+                    <div class="data-table mb-4">
+                        <div class="p-3 border-bottom">
+                            <h5 class="mb-0">
+                                <i class="fas fa-folder-tree me-2"></i>
+                                Yıl/Ay/Gün Klasörleri Oluşturma
+                            </h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label for="folder_year" class="form-label">Yıl</label>
+                                    <input type="number" class="form-control" id="folder_year" min="1970" max="2100" placeholder="2025" value="<?= date('Y') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="folder_base" class="form-label">Temel Klasör (opsiyonel)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">assets/uploads/</span>
+                                        <input type="text" class="form-control" id="folder_base" placeholder="ör. images veya boş bırakın">
+                                    </div>
+                                    <div class="form-text">Boş bırakılırsa doğrudan <code>assets/uploads</code> altında oluşturulur.</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-primary w-100" id="btnCreateDateFolders">
+                                        <i class="fas fa-hammer me-2"></i>Oluştur
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="createFoldersResult" class="mt-3" style="display:none;"></div>
+                        </div>
+                    </div>
+
                     <div class="data-table">
                         <div class="p-3 border-bottom">
                             <h5 class="mb-0">
@@ -511,6 +542,16 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         saveAllSettings();
     });
+
+    // Create date folders action
+    const btn = document.getElementById('btnCreateDateFolders');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            const year = document.getElementById('folder_year').value;
+            const base = document.getElementById('folder_base').value.trim();
+            createDateFolders(year, base);
+        });
+    }
 });
 
 // Character counter
@@ -653,5 +694,50 @@ function resetToDefaults() {
             showNotification('Ayarlar sıfırlanırken hata oluştu: ' + error.message, 'error');
         });
     }
+}
+
+// Create full date folders
+function createDateFolders(year, baseSubdir) {
+    const resultEl = document.getElementById('createFoldersResult');
+    const btn = document.getElementById('btnCreateDateFolders');
+    if (!year) {
+        showNotification('Lütfen geçerli bir yıl girin.', 'error');
+        return;
+    }
+
+    const payload = {
+        csrf_token: document.querySelector('[name="csrf_token"]').value,
+        year: year,
+        base_subdir: baseSubdir || ''
+    };
+
+    const original = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Oluşturuluyor...';
+    btn.disabled = true;
+
+    fetch('<?= url('/admin/api/uploads/create-date-folders') ?>', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(resp => {
+        if (!resp.success) throw new Error(resp.error || resp.message || 'İşlem başarısız');
+        showNotification(resp.message, 'success');
+        resultEl.style.display = '';
+        resultEl.className = 'alert alert-info';
+        resultEl.innerHTML = `
+            <div><strong>Yıl:</strong> ${resp.year}</div>
+            <div><strong>Temel Klasör:</strong> ${resp.base || 'assets/uploads/'}</div>
+            <div class="mt-2">Oluşturulan: <strong>${resp.created_count}</strong> · Zaten vardı: <strong>${resp.skipped_count}</strong> · Hata: <strong>${resp.error_count}</strong></div>
+        `;
+    })
+    .catch(err => {
+        showNotification('Klasörler oluşturulurken hata: ' + err.message, 'error');
+    })
+    .finally(() => {
+        btn.innerHTML = original;
+        btn.disabled = false;
+    });
 }
 </script>

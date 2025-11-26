@@ -168,9 +168,14 @@ class AdminController extends Controller {
         $where = [];
         $params = [];
         
-        if (!empty($search)) {
-            $where[] = "(n.title LIKE :search OR n.content LIKE :search)";
-            $params['search'] = "%{$search}%";
+        if (!empty(trim((string)$search))) {
+            // PDO'da aynı isimli placeholder tekrar kullanılamaz; benzersiz placeholder kullan
+            $where[] = "(n.title LIKE :search1 OR n.summary LIKE :search2 OR n.content LIKE :search3 OR n.slug LIKE :search4)";
+            $like = "%" . trim((string)$search) . "%";
+            $params['search1'] = $like;
+            $params['search2'] = $like;
+            $params['search3'] = $like;
+            $params['search4'] = $like;
         }
         
         if (!empty($category)) {
@@ -413,6 +418,7 @@ class AdminController extends Controller {
             'parent_id' => $this->post('parent_id') ?: null,
             'sort_order' => (int)$this->post('sort_order', 0),
             'is_active' => (bool)$this->post('is_active'),
+            'show_in_menu' => (bool)$this->post('show_in_menu'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
         
@@ -483,6 +489,24 @@ class AdminController extends Controller {
             $this->json(['success' => true, 'message' => 'Kategori durumu güncellendi']);
         } else {
             $this->json(['error' => 'Durum güncellenirken hata oluştu'], 500);
+        }
+    }
+
+    /**
+     * Kategori menü görünürlüğünü değiştir
+     */
+    public function toggleCategoryMenu($id) {
+        $show = (bool)$this->post('show_in_menu');
+        
+        $result = $this->db->update('categories', [
+            'show_in_menu' => $show ? 1 : 0,
+            'updated_at' => date('Y-m-d H:i:s')
+        ], 'id = :id', ['id' => $id]);
+        
+        if ($result) {
+            $this->json(['success' => true, 'message' => 'Menü görünürlüğü güncellendi']);
+        } else {
+            $this->json(['error' => 'Menü görünürlüğü güncellenirken hata oluştu'], 500);
         }
     }
     
@@ -1800,6 +1824,101 @@ class AdminController extends Controller {
         } else {
             $this->json(['error' => 'Dosya yüklenemedi'], 500);
         }
+    }
+    
+    /**
+     * Create full year/month/day folder structure under uploads
+     * Example: assets/uploads/2025/10/19
+     */
+    public function createDateFolders() {
+        // CSRF check
+        if (!$this->verifyCsrfToken($this->post('csrf_token'))) {
+            $this->json(['error' => 'CSRF token hatalı'], 400);
+            return;
+        }
+
+        // Read input
+        $yearInput = $this->post('year');
+        $baseSubdirInput = (string)$this->post('base_subdir', '');
+
+        // Validate year
+        if (!is_numeric($yearInput)) {
+            $this->json(['error' => 'Yıl geçersiz'], 422);
+            return;
+        }
+        $year = (int)$yearInput;
+        if ($year < 1970 || $year > 2100) {
+            $this->json(['error' => 'Yıl aralığı 1970-2100 olmalıdır'], 422);
+            return;
+        }
+
+        // Sanitize base subdir (optional). Keep it inside UPLOAD_PATH.
+        $baseSubdir = str_replace('\\', '/', trim($baseSubdirInput));
+        // Collapse multiple slashes
+        $baseSubdir = preg_replace('#/{2,}#', '/', $baseSubdir);
+        // Disallow traversal
+        if (strpos($baseSubdir, '..') !== false) {
+            $this->json(['error' => 'Geçersiz alt klasör yolu'], 422);
+            return;
+        }
+        // Trim leading/trailing slashes
+        $baseSubdir = trim($baseSubdir, '/');
+
+        // Build base directory under uploads
+        $uploadsRoot = rtrim(UPLOAD_PATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $baseDir = $uploadsRoot;
+        if ($baseSubdir !== '') {
+            $baseDir .= str_replace('/', DIRECTORY_SEPARATOR, $baseSubdir) . DIRECTORY_SEPARATOR;
+        }
+
+        // Ensure base directory exists (create if missing)
+        if (!is_dir($baseDir) && !mkdir($baseDir, 0755, true)) {
+            $this->json(['error' => 'Temel klasör oluşturulamadı'], 500);
+            return;
+        }
+
+        // Create structure: {year}/{month}/{day}
+        $createdCount = 0;
+        $skippedCount = 0;
+        $errorCount = 0;
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthStr = str_pad((string)$month, 2, '0', STR_PAD_LEFT);
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+            for ($day = 1; $day <= $daysInMonth; $day++) {
+                $dayStr = str_pad((string)$day, 2, '0', STR_PAD_LEFT);
+                $targetDir = $baseDir . $year . DIRECTORY_SEPARATOR . $monthStr . DIRECTORY_SEPARATOR . $dayStr;
+
+                if (is_dir($targetDir)) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                if (@mkdir($targetDir, 0755, true)) {
+                    $createdCount++;
+                } else {
+                    // If another process created it in between
+                    if (is_dir($targetDir)) {
+                        $skippedCount++;
+                    } else {
+                        $errorCount++;
+                    }
+                }
+            }
+        }
+
+        $relativeBase = str_replace(rtrim(ROOT_PATH, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR, '', $baseDir);
+
+        $this->json([
+            'success' => true,
+            'message' => "{$year} yılı için klasör oluşturma tamamlandı",
+            'year' => $year,
+            'base' => $relativeBase,
+            'created_count' => $createdCount,
+            'skipped_count' => $skippedCount,
+            'error_count' => $errorCount
+        ]);
     }
     
     /**

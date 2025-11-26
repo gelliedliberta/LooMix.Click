@@ -36,6 +36,20 @@ class Database {
             ];
             
             $this->pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+            // MySQL session time_zone'ı uygulama zaman dilimine ayarla
+            try {
+                // PHP timezone'u offset'e çevir (+03:00 gibi)
+                $dt = new DateTime('now', new DateTimeZone(defined('APP_TIMEZONE') ? APP_TIMEZONE : date_default_timezone_get()));
+                $offsetSeconds = $dt->getOffset();
+                $sign = $offsetSeconds >= 0 ? '+' : '-';
+                $abs = abs($offsetSeconds);
+                $hours = str_pad((string)floor($abs / 3600), 2, '0', STR_PAD_LEFT);
+                $minutes = str_pad((string)floor(($abs % 3600) / 60), 2, '0', STR_PAD_LEFT);
+                $mysqlTz = "$sign$hours:$minutes"; // örn: +03:00
+                $this->pdo->exec("SET time_zone = '" . $mysqlTz . "'");
+            } catch (Throwable $t) {
+                // Sessiyon time_zone set edilemezse sessizce devam et
+            }
             
         } catch (PDOException $e) {
             if (DEBUG_MODE) {

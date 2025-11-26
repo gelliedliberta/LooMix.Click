@@ -54,10 +54,12 @@
                                                 <i class="fas fa-calendar me-1"></i>
                                                 <?= formatDate($item['publish_date']) ?>
                                             </small>
+                                            <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                             <small class="text-muted">
                                                 <i class="fas fa-eye me-1"></i>
                                                 <?= number_format($item['view_count'] ?? 0) ?>
                                             </small>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>

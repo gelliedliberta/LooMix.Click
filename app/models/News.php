@@ -93,7 +93,7 @@ class News extends Model {
     /**
      * İlgili haberleri getir
      */
-    public function getRelatedNews($newsId, $categoryId, $limit = 6) {
+    public function getRelatedNews($newsId, $categoryId, $limit = 9) {
         $sql = "SELECT n.*, c.name as category_name, c.slug as category_slug 
                 FROM {$this->table} n 
                 INNER JOIN categories c ON n.category_id = c.id 

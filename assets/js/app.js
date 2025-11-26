@@ -17,12 +17,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 2. Search Enhancement
+    // 2. Search Enhancement + Tag Autocomplete
     const searchInput = document.querySelector('input[name="q"]');
     if (searchInput) {
+        // Basic: keep placeholder debounce for now
         searchInput.addEventListener('input', debounce(function(e) {
             const query = e.target.value;
         }, 300));
+
+        // Tag autocomplete dropdown
+        const ac = document.createElement('div');
+        ac.className = 'autocomplete-dropdown list-group position-absolute shadow';
+        ac.style.display = 'none';
+        ac.style.zIndex = '1050';
+        searchInput.parentElement.style.position = 'relative';
+        searchInput.parentElement.appendChild(ac);
+
+        const hideDropdown = () => { ac.style.display = 'none'; ac.innerHTML = ''; };
+
+        const fetchTags = debounce(async (q) => {
+            if (!q || q.length < 2) { hideDropdown(); return; }
+            try {
+                const params = new URLSearchParams({ q, limit: 8 });
+                const res = await fetch(`${window.AppConfig?.baseUrl || ''}/api/tags/search?` + params.toString());
+                const data = await res.json();
+                const items = (data && data.success) ? data.data : [];
+                if (!items.length) { hideDropdown(); return; }
+                ac.innerHTML = '';
+                items.forEach(item => {
+                    const a = document.createElement('a');
+                    a.href = item.url;
+                    a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                    a.innerHTML = `<span><i class="fas fa-tag me-2" style="color:${item.color}"></i>${item.name}</span><span class="badge bg-light text-dark">${item.usage_count}</span>`;
+                    ac.appendChild(a);
+                });
+                ac.style.width = '100%';
+                ac.style.top = (searchInput.offsetTop + searchInput.offsetHeight) + 'px';
+                ac.style.left = searchInput.offsetLeft + 'px';
+                ac.style.display = 'block';
+            } catch (err) {
+                hideDropdown();
+            }
+        }, 250);
+
+        searchInput.addEventListener('input', (e) => fetchTags(e.target.value.trim()));
+        document.addEventListener('click', (e) => { if (!ac.contains(e.target) && e.target !== searchInput) hideDropdown(); });
     }
     
     // 3. News Card Hover Effects
@@ -59,6 +98,19 @@ document.addEventListener('DOMContentLoaded', function() {
             backToTop.style.visibility = 'hidden';
         }
     });
+
+    // 5. Mobile offcanvas: close on link click
+    const offcanvasEl = document.getElementById('mobileNav');
+    if (offcanvasEl) {
+        const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
+        offcanvasEl.addEventListener('click', (e) => {
+            const target = e.target.closest('a.nav-link');
+            if (target && target.getAttribute('href')) {
+                // Close after small delay to allow navigation for same-page anchors
+                setTimeout(() => offcanvas.hide(), 50);
+            }
+        });
+    }
 });
 
 // Utility Functions

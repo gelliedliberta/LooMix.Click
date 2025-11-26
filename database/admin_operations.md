@@ -2,7 +2,7 @@
 
 Bu dosya, LooMix.Click admin panel veritabanı işlemlerini ve güncellemelerini içerir.
 
-## Son Güncelleme: 2025-01-14 - Layout Render Sorunu Çözüldü - SİSTEM TAMAM ✅
+## Son Güncelleme: 2025-10-18 - Uploads Tarih Klasörleri Oluşturma Özelliği Eklendi ✅
 
 ---
 
@@ -36,6 +36,58 @@ INSERT INTO admin_users (username, password, full_name, role) VALUES
 ---
 
 ## Son Yapılan İşlemler
+
+### 2025-10-18: Uploads Altında Yıl/Ay/Gün Klasörleri Toplu Oluşturma
+
+Değişiklik veritabanı şeması gerektirmez; admin paneline yeni bir yardımcı API ve arayüz eklenmiştir.
+
+Özellik:
+- `assets/uploads/{YIL}/{AY}/{GUN}` yapısında tüm günleri kapsayacak şekilde klasörleri oluşturur.
+- İsteğe bağlı olarak `assets/uploads/` altında bir alt dizin belirtilerek (`images`, `documents` vb.) aynı yapı o alt dizin içinde oluşturulabilir.
+
+Endpoint:
+- Route: `POST /admin/api/uploads/create-date-folders`
+- CSRF: Zorunlu (`csrf_token`)
+- Body (JSON):
+```
+{
+  "csrf_token": "...",
+  "year": 2025,
+  "base_subdir": "images" // opsiyonel; boşsa doğrudan assets/uploads altında
+}
+```
+
+Dönüş (JSON):
+```
+{
+  "success": true,
+  "message": "2025 yılı için klasör oluşturma tamamlandı",
+  "year": 2025,
+  "base": "assets/uploads/images/",
+  "created_count": 310,
+  "skipped_count": 420,
+  "error_count": 0
+}
+```
+
+UI:
+- Sayfa: `Admin > Ayarlar > Gelişmiş`
+- Bölüm: "Yıl/Ay/Gün Klasörleri Oluşturma"
+- Alanlar: `Yıl` (1970-2100), `Temel Klasör (opsiyonel)`
+- Buton: "Oluştur"; işlem tamamlanınca özet sonuç gösterilir.
+
+Güvenlik/Doğrulamalar:
+- CSRF kontrolü zorunlu.
+- Yıl aralığı 1970-2100.
+- `base_subdir` için dizin geçişi (.. ) engellenir; UPLOAD_PATH dışına çıkılamaz.
+
+Etkilenen Dosyalar:
+- `index.php` → yeni route kaydı
+- `app/controllers/AdminController.php` → `createDateFolders()` metodu
+- `templates/admin/settings/index.php` → Gelişmiş sekmesine UI eklendi
+
+Veritabanı Etkisi:
+- Şema değişikliği yoktur; migration gerekmemektedir.
 
 ### 2025-01-14: Route Sistemi ve Template'ler Tamamlandı
 

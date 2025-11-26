@@ -558,18 +558,32 @@ function saveNews() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(async (response) => {
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(text ? text.substring(0, 200) : 'Beklenmeyen yanıt (JSON bekleniyordu)');
+        }
+        const payload = await response.json();
+        if (!response.ok || (payload && payload.error)) {
+            const msg = (payload && (payload.message || payload.error)) || 'İstek başarısız';
+            throw new Error(msg);
+        }
+        return payload;
+    })
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             showNotification('Haber başarıyla kaydedildi!', 'success');
             setTimeout(() => {
                 window.location.href = '/admin/haberler';
             }, 1500);
         } else {
-            throw new Error(data.message || 'Kaydetme hatası');
+            throw new Error((data && (data.message || data.error)) || 'Kaydetme hatası');
         }
     })
     .catch(error => {

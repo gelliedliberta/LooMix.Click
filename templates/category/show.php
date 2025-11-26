@@ -130,7 +130,6 @@
                         <div class="col-md-6 mb-4 news-item" data-news-id="<?= $newsItem['id'] ?>">
                             <article class="news-card h-100">
                                 <div class="card border-0 shadow-sm h-100 hover-lift">
-                                    <?php if ($newsItem['featured_image']): ?>
                                     <div class="card-img-wrapper position-relative">
                                         <a href="<?= url('/haber/' . $newsItem['slug']) ?>">
                                             <img src="<?= getImageUrl($newsItem['featured_image']) ?>" 
@@ -152,7 +151,6 @@
                                             </span>
                                         <?php endif; ?>
                                     </div>
-                                    <?php endif; ?>
                                     
                                     <div class="card-body d-flex flex-column">
                                         <h3 class="card-title h6 fw-bold mb-2">
@@ -180,10 +178,12 @@
                                         </div>
                                         
                                         <div class="card-stats d-flex align-items-center justify-content-between small text-muted mt-2">
+                                            <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                             <div class="d-flex align-items-center">
                                                 <i class="far fa-eye me-1"></i>
                                                 <?= number_format($newsItem['view_count']) ?>
                                             </div>
+                                            <?php endif; ?>
                                             <?php if ($newsItem['reading_time']): ?>
                                                 <div class="d-flex align-items-center">
                                                     <i class="fas fa-clock me-1"></i>
@@ -281,10 +281,12 @@
                                         <?= truncateText($popular['title'], 70) ?>
                                     </a>
                                 </h6>
+                                <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                 <div class="small text-muted">
                                     <i class="far fa-eye me-1"></i>
                                     <?= number_format($popular['view_count']) ?> görüntülenme
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </article>
                         <?php endforeach; ?>
@@ -293,9 +295,11 @@
                 <?php endif; ?>
                 
                 <!-- Sidebar Ad -->
+                <?php if (ADS_ENABLED): ?>
                 <div class="sidebar-widget mb-4">
                     <?= displayAd('sidebar_square') ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Latest News -->
                 <?php if (!empty($latestNews)): ?>
@@ -443,18 +447,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function createNewsCard(news) {
+        const imgSrc = (news.featured_image && String(news.featured_image).trim() !== '')
+            ? (String(news.featured_image).startsWith('http')
+                ? news.featured_image
+                : '/' + String(news.featured_image).replace(/^\/+/, ''))
+            : '/assets/images/no-image.jpg';
+
+        const breakingBadge = news.is_breaking ? `
+            <span class="position-absolute top-0 start-0 badge bg-danger m-2">
+                <i class="fas fa-bolt me-1"></i>SON DAKİKA
+            </span>
+        ` : '';
+
+        const featuredBadge = news.is_featured ? `
+            <span class="position-absolute top-0 end-0 badge bg-warning text-dark m-2">
+                <i class="fas fa-star me-1"></i>ÖZEL
+            </span>
+        ` : '';
+
         return `
             <div class="col-md-6 mb-4 news-item" data-news-id="${news.id}">
                 <article class="news-card h-100">
                     <div class="card border-0 shadow-sm h-100 hover-lift">
-                        ${news.featured_image ? `
-                            <div class="card-img-wrapper position-relative">
-                                <a href="/haber/${news.slug}">
-                                    <img src="${news.featured_image}" alt="${news.title}" 
-                                         class="card-img-top" style="height: 200px; object-fit: cover;">
-                                </a>
-                            </div>
-                        ` : ''}
+                        <div class="card-img-wrapper position-relative">
+                            <a href="/haber/${news.slug}">
+                                <img src="${imgSrc}" alt="${news.title}" 
+                                     class="card-img-top" style="height: 200px; object-fit: cover;">
+                            </a>
+                            ${breakingBadge}
+                            ${featuredBadge}
+                        </div>
                         <div class="card-body d-flex flex-column">
                             <h3 class="card-title h6 fw-bold mb-2">
                                 <a href="/haber/${news.slug}" class="text-decoration-none text-dark stretched-link">

@@ -70,10 +70,12 @@
                             <i class="fas fa-calendar me-1"></i>
                             <?= formatDate($news['publish_date'], 'd F Y, l H:i') ?>
                         </div>
+                        <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                         <div class="me-4 mb-2">
                             <i class="fas fa-eye me-1"></i>
                             <?= number_format($news['view_count']) ?> görüntülenme
                         </div>
+                        <?php endif; ?>
                         <?php if ($news['reading_time']): ?>
                         <div class="me-4 mb-2">
                             <i class="fas fa-clock me-1"></i>
@@ -86,32 +88,37 @@
                     <div class="social-share mb-4">
                         <div class="d-flex align-items-center">
                             <span class="me-3 fw-bold">Paylaş:</span>
-                            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($canonicalUrl) ?>" 
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($shareUrl) ?>" 
                                class="btn btn-outline-primary btn-sm me-2 social-share-btn" data-platform="facebook" target="_blank">
                                 <i class="fab fa-facebook-f me-1"></i>Facebook
                             </a>
-                            <a href="https://twitter.com/intent/tweet?url=<?= urlencode($canonicalUrl) ?>&text=<?= urlencode($news['title']) ?>" 
-                               class="btn btn-outline-info btn-sm me-2 social-share-btn" data-platform="twitter" target="_blank">
-                                <i class="fab fa-twitter me-1"></i>Twitter
+                            <a href="https://x.com/intent/post?url=<?= urlencode($shareUrl) ?>&text=<?= urlencode($news['title']) ?>" 
+                               class="btn btn-outline-dark btn-sm me-2 social-share-btn" data-platform="x" target="_blank">
+                                <i class="fab fa-x-twitter me-1"></i>X
                             </a>
-                            <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= urlencode($canonicalUrl) ?>" 
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= urlencode($shareUrl) ?>" 
                                class="btn btn-outline-secondary btn-sm me-2 social-share-btn" data-platform="linkedin" target="_blank">
                                 <i class="fab fa-linkedin me-1"></i>LinkedIn
                             </a>
-                            <a href="whatsapp://send?text=<?= urlencode($news['title'] . ' ' . $canonicalUrl) ?>" 
-                               class="btn btn-outline-success btn-sm social-share-btn" data-platform="whatsapp">
+                            <a href="whatsapp://send?text=<?= urlencode($news['title'] . ' ' . $shareUrl) ?>" 
+                               class="btn btn-outline-success btn-sm me-2 social-share-btn" data-platform="whatsapp">
                                 <i class="fab fa-whatsapp me-1"></i>WhatsApp
-                            </a>
+                            </a>                            
+                            <button class="btn btn-outline-secondary btn-sm me-2 social-share-btn" onclick="copyToClipboard('<?= $shareUrl ?>')">
+                                    <i class="fas fa-link me-1"></i>Kopyala
+                                </button>
                         </div>
                     </div>
                 </header>
                 
                 <!-- Featured Image -->
                 <div class="news-image mb-4">
-                    <figure class="figure">
-                        <img src="<?= getImageUrl($news['featured_image']) ?>" 
-                             alt="<?= escape($news['image_alt'] ?: $news['title']) ?>" 
-                             class="figure-img img-fluid rounded shadow-sm w-100">
+                    <figure class="figure mb-0">
+                        <div class="news-hero">
+                            <img src="<?= getImageUrl($news['featured_image']) ?>" 
+                                 alt="<?= escape($news['image_alt'] ?: $news['title']) ?>" 
+                                 class="news-hero-img" loading="lazy" decoding="async">
+                        </div>
                         <?php if ($news['image_alt']): ?>
                         <figcaption class="figure-caption text-center mt-2">
                             <?= escape($news['image_alt']) ?>
@@ -121,104 +128,19 @@
                 </div>
                 
                 <!-- Content Ad -->
+                <?php if (ADS_ENABLED): ?>
                 <div class="content-ad-top text-center mb-4">
                     <?= displayAd('content_inline') ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Article Content -->
                 <div class="news-content">
-                    <?= $news['content'] ?>
+                    <?= renderNewsContent($news['content']) ?>
                 </div>
                 
-                <!-- Tags -->
-                <?php if (!empty($tags)): ?>
-                <div class="news-tags mt-5 pt-4 border-top">
-                    <h5 class="mb-3">
-                        <i class="fas fa-tags me-2 text-primary"></i>
-                        Etiketler
-                    </h5>
-                    <div class="tag-list">
-                        <?php foreach ($tags as $tag): ?>
-                            <a href="<?= url('/etiket/' . $tag['slug']) ?>" 
-                               class="badge bg-light text-dark text-decoration-none me-2 mb-2 p-2 border">
-                                <?= escape($tag['name']) ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
                 
-                <!-- Bottom Social Share -->
-                <div class="bottom-social-share mt-5 pt-4 border-top">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h6 class="mb-2">Bu haberi paylaş</h6>
-                            <div class="social-buttons">
-                                <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($canonicalUrl) ?>" 
-                                   class="btn btn-primary btn-sm me-2 mb-2" target="_blank">
-                                    <i class="fab fa-facebook-f me-1"></i>Paylaş
-                                </a>
-                                <a href="https://twitter.com/intent/tweet?url=<?= urlencode($canonicalUrl) ?>&text=<?= urlencode($news['title']) ?>" 
-                                   class="btn btn-info btn-sm me-2 mb-2" target="_blank">
-                                    <i class="fab fa-twitter me-1"></i>Tweet
-                                </a>
-                                <button class="btn btn-outline-secondary btn-sm mb-2" onclick="copyToClipboard('<?= $canonicalUrl ?>')">
-                                    <i class="fas fa-link me-1"></i>Kopyala
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <small class="text-muted">
-                                Son güncelleme: <?= formatDate($news['updated_at'], 'd.m.Y H:i') ?>
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </article>
-            
-            <!-- Related News -->
-            <?php if (!empty($relatedNews)): ?>
-            <section class="related-news mt-5">
-                <h3 class="section-title h4 fw-bold mb-4 pb-2 border-bottom border-primary">
-                    <i class="fas fa-newspaper text-primary me-2"></i>
-                    İlgili Haberler
-                </h3>
-                
-                <div class="row">
-                    <?php foreach ($relatedNews as $related): ?>
-                    <div class="col-md-6 mb-4">
-                        <article class="related-news-item">
-                            <div class="card border-0 shadow-sm h-100">
-                                <?php if ($related['featured_image']): ?>
-                                <div class="card-img-wrapper">
-                                    <a href="<?= url('/haber/' . $related['slug']) ?>">
-                                        <img src="<?= getImageUrl($related['featured_image']) ?>" 
-                                             alt="<?= escape($related['title']) ?>" 
-                                             class="card-img-top" style="height: 150px; object-fit: cover;">
-                                    </a>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <div class="card-body">
-                                    <h5 class="card-title h6 fw-bold mb-2">
-                                        <a href="<?= url('/haber/' . $related['slug']) ?>" 
-                                           class="text-decoration-none text-dark">
-                                            <?= escape($related['title']) ?>
-                                        </a>
-                                    </h5>
-                                    
-                                    <div class="card-meta small text-muted">
-                                        <i class="fas fa-calendar me-1"></i>
-                                        <?= formatDate($related['publish_date'], 'd.m.Y') ?>
-                                    </div>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            <?php endif; ?>
+            </article>          
         </div>
         
         <!-- Sidebar -->
@@ -248,10 +170,12 @@
                                         <?= truncateText($popular['title'], 80) ?>
                                     </a>
                                 </h6>
+                                <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                 <div class="small text-muted">
                                     <i class="far fa-eye me-1"></i>
                                     <?= number_format($popular['view_count']) ?> görüntülenme
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </article>
                         <?php endforeach; ?>
@@ -260,9 +184,11 @@
                 <?php endif; ?>
                 
                 <!-- Sidebar Ad -->
+                <?php if (ADS_ENABLED): ?>
                 <div class="sidebar-widget mb-4">
                     <?= displayAd('sidebar_square') ?>
                 </div>
+                <?php endif; ?>
                 
                 <!-- Latest News -->
                 <?php if (!empty($latestNews)): ?>
@@ -308,6 +234,105 @@
             </aside>
         </div>
     </div>
+    <!-- Tags -->
+    <?php if (!empty($tags)): ?>
+                <div class="news-tags mt-5 pt-4 border-top">
+                    <h5 class="mb-3">
+                        <i class="fas fa-tags me-2 text-primary"></i>
+                        Etiketler
+                    </h5>
+                    <div class="tag-list">
+                        <?php foreach ($tags as $tag): ?>
+                            <a href="<?= url('/etiket/' . $tag['slug']) ?>" 
+                               class="badge bg-light text-dark text-decoration-none me-2 mb-2 p-2 border">
+                                <?= escape($tag['name']) ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Bottom Social Share -->
+                <div class="bottom-social-share mt-5 pt-4 border-top">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6 class="mb-2"></h6>
+                                                <!-- Social Share -->
+                    <div class="social-share mb-4">
+                        <div class="d-flex align-items-center">
+                            <span class="me-3 fw-bold">Bu haberi paylaş:</span>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode($shareUrl) ?>" 
+                               class="btn btn-outline-primary btn-sm me-2 social-share-btn" data-platform="facebook" target="_blank">
+                                <i class="fab fa-facebook-f me-1"></i>Facebook
+                            </a>
+                            <a href="https://x.com/intent/post?url=<?= urlencode($shareUrl) ?>&text=<?= urlencode($news['title']) ?>" 
+                               class="btn btn-outline-dark btn-sm me-2 social-share-btn" data-platform="x" target="_blank">
+                                <i class="fab fa-x-twitter me-1"></i>X
+                            </a>
+                            <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= urlencode($shareUrl) ?>" 
+                               class="btn btn-outline-secondary btn-sm me-2 social-share-btn" data-platform="linkedin" target="_blank">
+                                <i class="fab fa-linkedin me-1"></i>LinkedIn
+                            </a>
+                            <a href="whatsapp://send?text=<?= urlencode($news['title'] . ' ' . $shareUrl) ?>" 
+                               class="btn btn-outline-success btn-sm me-2 social-share-btn" data-platform="whatsapp">
+                                <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                            </a>                            
+                            <button class="btn btn-outline-secondary btn-sm me-2 social-share-btn" onclick="copyToClipboard('<?= $shareUrl ?>')">
+                                    <i class="fas fa-link me-1"></i>Kopyala
+                                </button>
+                        </div>
+                    </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <small class="text-muted">
+                                Son güncelleme: <?= formatDate($news['updated_at'], 'd.m.Y H:i') ?>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+     <!-- Related News -->
+     <?php if (!empty($relatedNews)): ?>
+            <section class="related-news mt-5">
+                <h3 class="section-title h4 fw-bold mb-4 pb-2 border-bottom border-primary">
+                    <i class="fas fa-newspaper text-primary me-2"></i>
+                    İlgili Haberler
+                </h3>
+                
+                <div class="row">
+                    <?php foreach ($relatedNews as $related): ?>
+                    <div class="col-md-4 mb-4">
+                        <article class="related-news-item">
+                            <div class="card border-0 shadow-sm h-100">
+                                <?php if ($related['featured_image']): ?>
+                                <div class="card-img-wrapper">
+                                    <a href="<?= url('/haber/' . $related['slug']) ?>">
+                                        <img src="<?= getImageUrl($related['featured_image']) ?>" 
+                                             alt="<?= escape($related['title']) ?>" 
+                                             class="card-img-top" style="height: 150px; object-fit: cover;">
+                                    </a>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <div class="card-body">
+                                    <h5 class="card-title h6 fw-bold mb-2">
+                                        <a href="<?= url('/haber/' . $related['slug']) ?>" 
+                                           class="text-decoration-none text-dark">
+                                            <?= escape($related['title']) ?>
+                                        </a>
+                                    </h5>
+                                    
+                                    <div class="card-meta small text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        <?= formatDate($related['publish_date'], 'd.m.Y') ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
 </div>
 
 <script>

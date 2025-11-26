@@ -42,7 +42,7 @@ class NewsController extends Controller {
         $relatedNews = $newsModel->getRelatedNews(
             $news['id'], 
             $news['category_id'], 
-            6
+            9
         );
         
         // Son haberler (sidebar için)
@@ -63,8 +63,10 @@ class NewsController extends Controller {
         // Open Graph resmi
         $ogImage = !empty($news['featured_image']) ? getImageUrl($news['featured_image']) : DEFAULT_META_IMAGE;
         
-        // Canonical URL
+        // Canonical URL (SEO için)
         $canonicalUrl = !empty($news['canonical_url']) ? $news['canonical_url'] : url('/haber/' . $news['slug']);
+        // Paylaşım için mevcut sayfa URL'sini kullan (canonical'dan bağımsız)
+        $shareUrl = $this->getCurrentUrl();
         
         // JSON-LD struktural veri
         $structuredData = $this->generateNewsStructuredData($news, $tags, $canonicalUrl, $ogImage);
@@ -76,6 +78,7 @@ class NewsController extends Controller {
             'metaKeywords' => $metaKeywords,
             'metaImage' => $ogImage,
             'canonicalUrl' => $canonicalUrl,
+            'shareUrl' => $shareUrl,
             'structuredData' => $structuredData,
             'news' => $news,
             'tags' => $tags,
@@ -220,7 +223,7 @@ class NewsController extends Controller {
             return;
         }
         
-        $relatedNews = $newsModel->getRelatedNews($newsId, $news['category_id'], 6);
+        $relatedNews = $newsModel->getRelatedNews($newsId, $news['category_id'], 9);
         
         $this->json([
             'success' => true,

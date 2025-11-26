@@ -14,8 +14,8 @@ class HomeController extends Controller {
             $newsModel = new News();
             $categoryModel = new Category();
             
-            // Öne çıkan haberler
-            $featuredNews = $newsModel->getFeaturedNews(6);
+            // Öne çıkan haberler (slider için en az 7 öğe: 5 slider + 2 yan)
+            $featuredNews = $newsModel->getFeaturedNews(7);
             
             // Son haberler
             $latestNews = $newsModel->getPublishedNews(12);

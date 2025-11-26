@@ -146,6 +146,41 @@ class ApiController extends Controller {
             'count' => count($apiNews)
         ]);
     }
+
+    /**
+     * Etiket arama (autocomplete)
+     * GET /api/tags/search?q=term&limit=10
+     */
+    public function searchTags() {
+        $query = trim((string)$this->get('q', ''));
+        $limit = (int)$this->get('limit', 10);
+        if ($limit > 50) { $limit = 50; }
+
+        if ($query === '') {
+            return $this->json(['success' => true, 'data' => []]);
+        }
+
+        $tagModel = new Tag();
+        $results = $tagModel->searchByName($query, $limit);
+
+        // 0 kullanımda gizle
+        $results = array_values(array_filter($results, function($t) {
+            return (int)($t['usage_count'] ?? 0) > 0;
+        }));
+
+        $payload = array_map(function($t) {
+            return [
+                'id' => (int)$t['id'],
+                'name' => $t['name'],
+                'slug' => $t['slug'],
+                'color' => $t['color'] ?: '#6c757d',
+                'usage_count' => (int)$t['usage_count'],
+                'url' => url('/etiket/' . $t['slug'])
+            ];
+        }, $results);
+
+        return $this->json(['success' => true, 'data' => $payload]);
+    }
     
     /**
      * JSON-LD Structured Data Generator
@@ -283,6 +318,9 @@ class ApiController extends Controller {
             return $this->json(['success' => false, 'error' => 'Zone gerekli'], 400);
         }
         
+        if (!ADS_ENABLED) {
+            return $this->json(['success' => true, 'html' => '']);
+        }
         try {
             $adManager = new AdManager();
             // Lazy placeholder yerine gerçek ad HTML'i dön
@@ -388,6 +426,17 @@ class ApiController extends Controller {
                 $metaTags['title'] = $category['name'] . ' Haberleri' . META_TITLE_SUFFIX;
                 $metaTags['description'] = $category['description'] ?: $category['name'] . ' kategorisinden en güncel haberler';
             }
+        } elseif ($pathParts[0] === 'etiket' && isset($pathParts[1])) {
+            // Etiket sayfası
+            $tagModel = new Tag();
+            $tag = $tagModel->getBySlug($pathParts[1]);
+            if ($tag) {
+                $metaTags['title'] = $tag['name'] . ' Etiketi Haberleri' . META_TITLE_SUFFIX;
+                $metaTags['description'] = $tag['description'] ?: ($tag['name'] . ' etiketi ile ilgili en güncel haberler');
+            }
+        } elseif ($pathParts[0] === 'etiketler') {
+            $metaTags['title'] = 'Tüm Etiketler' . META_TITLE_SUFFIX;
+            $metaTags['description'] = 'Sitede kullanılan tüm etiketler ve içerikleri';
         }
         
         $this->json($metaTags);

@@ -33,31 +33,51 @@ function createSlug($text) {
 
 /**
  * Tarih formatla
+ * Türkçe ay ve gün adlarına çevirir
  */
 function formatDate($date, $format = 'd.m.Y H:i') {
     $ts = is_numeric($date) ? (int)$date : strtotime($date);
     $out = date($format, $ts);
-    // Ay ve gün adlarını TR'ye çevir (numeric formatlar etkilenmez)
-    $en = ['January','February','March','April','May','June','July','August','September','October','November','December',
-        'Mon','Tue','Wed','Thu','Fri','Sat','Sun',
-        'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    $tr = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık',
-        'Pzt','Sal','Çar','Per','Cum','Cmt','Paz',
-        'Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
-    return str_replace($en, $tr, $out);
+    
+    // Önce uzun isimleri, sonra kısa isimleri çevir (kısa isimler uzun isimlerin içinde olabileceği için)
+    // Ay isimleri (uzun)
+    $en = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    $tr = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    $out = str_replace($en, $tr, $out);
+    
+    // Gün isimleri (uzun) - önce bunları çevir
+    $en = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    $tr = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+    $out = str_replace($en, $tr, $out);
+    
+    // Gün isimleri (kısa) - sonra kısaları çevir
+    $en = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    $tr = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+    $out = str_replace($en, $tr, $out);
+    
+    return $out;
 }
 
 /**
  * Türkçe tarih formatı (Intl yoksa basit çeviriyle)
+ * Tam Türkçe tarih formatı oluşturur
  */
 function turkishDate($format = 'd F Y, l', $date = null) {
     $timestamp = $date ? (is_numeric($date) ? (int)$date : strtotime($date)) : time();
     $result = date($format, $timestamp);
-    $en = ['January','February','March','April','May','June','July','August','September','October','November','December',
-        'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    $tr = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık',
-        'Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
-    return str_replace($en, $tr, $result);
+    
+    // Önce uzun isimleri, sonra kısa isimleri çevir (kısa isimler uzun isimlerin içinde olabileceği için)
+    // Ay isimleri (uzun)
+    $en = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    $tr = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    $result = str_replace($en, $tr, $result);
+    
+    // Gün isimleri (uzun)
+    $en = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    $tr = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+    $result = str_replace($en, $tr, $result);
+    
+    return $result;
 }
 
 /**
@@ -83,14 +103,10 @@ function truncateText($text, $length = 150) {
  */
 function getImageUrl($imagePath, $default = null) {
     if (empty($imagePath)) {
-        return $default ?: 'assets/images/no-image.svg';
+        return $default ?: '/assets/images/no-image.jpg';
     }
     
-    if (strpos($imagePath, 'http') === 0) {
-        return $imagePath;
-    }
-    
-    return '/' . ltrim($imagePath, '/');
+    return ltrim($imagePath, '/');
 }
 
 /**
@@ -155,6 +171,9 @@ function view($viewName, $data = []) {
  * Reklam göster (AdManager entegrasyonu)
  */
 function displayAd($zoneName, $attributes = []) {
+    if (!ADS_ENABLED) {
+        return '';
+    }
     static $adManager = null;
     
     // AdManager instance'ını oluştur
@@ -214,6 +233,9 @@ function getAdPlaceholder($zoneName) {
  * Lazy loading reklam göster
  */
 function lazyAd($zoneName, $height = 250) {
+    if (!ADS_ENABLED) {
+        return '';
+    }
     static $adManager = null;
     
     if ($adManager === null) {
@@ -247,5 +269,83 @@ function lazyAd($zoneName, $height = 250) {
  */
 function getAdBlockerDetectionScript() {
     return AdManager::getAdBlockerDetectionScript();
+}
+
+/**
+ * Safely render imported rich HTML content inside news articles.
+ * - Parses the fragment in an isolated wrapper so stray closing tags cannot break outer layout
+ * - Removes dangerous/irrelevant tags (script, style, meta, link, head, body)
+ * - Normalizes common problematic attributes (iframes width)
+ */
+function renderNewsContent($html) {
+    if (!is_string($html) || $html === '') {
+        return '';
+    }
+
+    // Prepare DOMDocument
+    libxml_use_internal_errors(true);
+    $doc = new DOMDocument('1.0', 'UTF-8');
+
+    // Wrap content with a custom HTML tag so stray </div> cannot close it
+    // Custom tags are safe in HTML5 parsers and in DOMDocument
+    $wrapped = '<x-news-wrapper>' . $html . '</x-news-wrapper>';
+    $loaded = $doc->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    libxml_clear_errors();
+
+    if (!$loaded) {
+        // Fallback: return stripped but readable content
+        return strip_tags($html, '<p><br><strong><em><b><i><u><ul><ol><li><blockquote><img><a><h1><h2><h3><h4><h5><h6><iframe><figure><figcaption>');
+    }
+
+    $xpath = new DOMXPath($doc);
+
+    // Remove forbidden tags entirely
+    $forbidden = ['script','style','link','meta','head','body'];
+    foreach ($forbidden as $tag) {
+        $nodes = $doc->getElementsByTagName($tag);
+        // Collect first to avoid live list mutation issues
+        $toRemove = [];
+        foreach ($nodes as $n) { $toRemove[] = $n; }
+        foreach ($toRemove as $n) { $n->parentNode && $n->parentNode->removeChild($n); }
+    }
+
+    // Normalize iframes (common in embeds)
+    $iframes = $doc->getElementsByTagName('iframe');
+    foreach ($iframes as $iframe) {
+        $iframe->setAttribute('width', '100%');
+        // Remove inline fixed widths that may cause overflow
+        if ($iframe->hasAttribute('style')) {
+            $style = $iframe->getAttribute('style');
+            // Strip width declarations; keep others
+            $style = preg_replace('/\bwidth\s*:\s*[^;]+;?/i', '', $style);
+            $iframe->setAttribute('style', trim($style));
+        }
+    }
+
+    // Remove dangerous inline styles on generic elements (position:fixed; huge negative margins)
+    $styledNodes = $xpath->query('//*[@style]');
+    foreach ($styledNodes as $node) {
+        $style = $node->getAttribute('style');
+        $blocked = ['position\s*:\s*fixed', 'margin-left\s*:\s*-', 'margin-right\s*:\s*-'];
+        if (preg_match('/(' . implode('|', $blocked) . ')/i', $style)) {
+            // Soft clean: remove the blocked declarations only
+            $style = preg_replace('/\bposition\s*:\s*fixed\s*;?/i', '', $style);
+            $style = preg_replace('/\bmargin-left\s*:\s*-\s*[^;]+;?/i', 'margin-left:0;', $style);
+            $style = preg_replace('/\bmargin-right\s*:\s*-\s*[^;]+;?/i', 'margin-right:0;', $style);
+            $node->setAttribute('style', trim($style));
+        }
+    }
+
+    // Extract sanitized innerHTML of the wrapper
+    $wrappers = $doc->getElementsByTagName('x-news-wrapper');
+    if ($wrappers->length === 0) {
+        return '';
+    }
+    $wrapper = $wrappers->item(0);
+    $output = '';
+    foreach ($wrapper->childNodes as $child) {
+        $output .= $doc->saveHTML($child);
+    }
+    return $output;
 }
 ?>

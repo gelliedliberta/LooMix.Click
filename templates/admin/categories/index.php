@@ -30,6 +30,7 @@
                         <th width="120">Renk</th>
                         <th width="100">Haber Sayısı</th>
                         <th width="100">Durum</th>
+                        <th width="140">Menüde Göster</th>
                         <th width="120">Sıralama</th>
                         <th width="150">İşlemler</th>
                     </tr>
@@ -84,6 +85,13 @@
                                 <input class="form-check-input" type="checkbox" 
                                        <?= $category['is_active'] ? 'checked' : '' ?>
                                        onchange="toggleCategoryStatus(<?= $category['id'] ?>, this)">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox"
+                                       <?= (isset($category['show_in_menu']) ? (int)$category['show_in_menu'] : 1) ? 'checked' : '' ?>
+                                       onchange="toggleCategoryMenu(<?= $category['id'] ?>, this)">
                             </div>
                         </td>
                         <td>
@@ -254,12 +262,25 @@
                         </div>
                     </div>
                     
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="categoryActive" 
-                               name="is_active" value="1" checked>
-                        <label class="form-check-label" for="categoryActive">
-                            Aktif kategori
-                        </label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="categoryActive" 
+                                       name="is_active" value="1" checked>
+                                <label class="form-check-label" for="categoryActive">
+                                    Aktif kategori
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="categoryShowInMenu" 
+                                       name="show_in_menu" value="1" checked>
+                                <label class="form-check-label" for="categoryShowInMenu">
+                                    Menüde Göster
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -323,7 +344,7 @@ function editCategory(id) {
     // Get category data via AJAX
     fetch(`<?= url('/admin/api/categories/') ?>${id}`)
         .then(response => response.json())
-        .then(data => {
+                .then(data => {
             if (data.success) {
                 const category = data.category;
                 
@@ -337,6 +358,7 @@ function editCategory(id) {
                 document.getElementById('categoryParent').value = category.parent_id || '';
                 document.getElementById('categorySortOrder').value = category.sort_order;
                 document.getElementById('categoryActive').checked = category.is_active == 1;
+                document.getElementById('categoryShowInMenu').checked = (category.show_in_menu == null ? 1 : category.show_in_menu == 1);
                 
                 // Update modal title
                 document.getElementById('categoryModalTitle').textContent = 'Kategori Düzenle';
@@ -372,6 +394,9 @@ function saveCategory() {
     for (let [key, value] of formData.entries()) {
         data[key] = value;
     }
+        // Checkboxlar için boş gönderim durumunda 0 olarak set et
+        data['is_active'] = form.querySelector('#categoryActive').checked ? 1 : 0;
+        data['show_in_menu'] = form.querySelector('#categoryShowInMenu').checked ? 1 : 0;
     
     // Save category
     fetch('<?= url('/admin/api/categories/save') ?>', {
@@ -428,6 +453,35 @@ function toggleCategoryStatus(id, checkbox) {
     })
     .catch(error => {
         showNotification('Durum güncellenirken hata oluştu: ' + error.message, 'error');
+    });
+}
+
+// Toggle category menu visibility
+function toggleCategoryMenu(id, checkbox) {
+    const status = checkbox.checked ? 1 : 0;
+    
+    fetch(`<?= url('/admin/api/categories/') ?>${id}/toggle-menu`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            show_in_menu: status,
+            csrf_token: document.querySelector('[name="csrf_token"]').value 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Menü görünürlüğü güncellendi', 'success');
+        } else {
+            // Revert checkbox
+            checkbox.checked = !checkbox.checked;
+            throw new Error(data.message || 'Güncelleme hatası');
+        }
+    })
+    .catch(error => {
+        showNotification('Menü görünürlüğü güncellenirken hata oluştu: ' + error.message, 'error');
     });
 }
 

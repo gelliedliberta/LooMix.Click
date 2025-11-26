@@ -167,6 +167,9 @@ function env_int($key, $default = 0) {
 define('ROOT_PATH', dirname(__DIR__) . DIRECTORY_SEPARATOR);
 define('TEMPLATE_PATH', ROOT_PATH . 'templates' . DIRECTORY_SEPARATOR);
 
+// Zaman Dilimi
+define('APP_TIMEZONE', env('APP_TIMEZONE', 'Europe/Istanbul'));
+
 // Site Bilgileri
 define('SITE_NAME', 'LooMix.Click');
 define('SITE_DESCRIPTION', 'En güncel haberler, teknoloji, spor, ekonomi ve daha fazlası');
@@ -190,8 +193,11 @@ define('META_TITLE_SUFFIX', ' - LooMix.Click');
 define('DEFAULT_META_IMAGE', 'assets/images/default-share.jpg');
 define('ROBOTS_INDEX', true);
 
+// UI Görünürlük Ayarları
+define('SHOW_VIEW_COUNTS', env_bool('SHOW_VIEW_COUNTS', false));
+
 // Reklam Ayarları
-define('GOOGLE_ADSENSE_ID', env('GOOGLE_ADSENSE_ID', 'ca-pub-your-adsense-id'));
+define('GOOGLE_ADSENSE_ID', env('GOOGLE_ADSENSE_ID', 'ca-pub-3967023544942784'));
 define('ADS_ENABLED', env_bool('ADS_ENABLED', true));
 // Ad Blocker davranışı: true ise tespit edildiğinde reklam yükleme ve izleme durur
 define('ADBLOCK_STRICT_MODE', env_bool('ADBLOCK_STRICT_MODE', false));
@@ -199,6 +205,7 @@ define('ADBLOCK_STRICT_MODE', env_bool('ADBLOCK_STRICT_MODE', false));
 // Sayfalama Ayarları
 define('NEWS_PER_PAGE', 12);
 define('ADMIN_NEWS_PER_PAGE', 20);
+define('TAGS_PER_PAGE', 48);
 
 // Dosya Yükleme Ayarları
 define('UPLOAD_PATH', ROOT_PATH . 'assets' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR);

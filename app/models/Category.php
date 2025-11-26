@@ -10,7 +10,7 @@ class Category extends Model {
     /**
      * Aktif kategorileri getir
      */
-    public function getActiveCategories($parentId = null) {
+    public function getActiveCategories($parentId = null, $onlyMenu = false) {
         $sql = "SELECT * FROM {$this->table} WHERE is_active = 1";
         $params = [];
         
@@ -21,6 +21,10 @@ class Category extends Model {
             $params['parent_id'] = $parentId;
         }
         
+        if ($onlyMenu) {
+            $sql .= " AND (show_in_menu = 1 OR show_in_menu IS NULL)"; // eski veriler için NULL'u göster
+        }
+        
         $sql .= " ORDER BY sort_order ASC, name ASC";
         
         return $this->db->fetchAll($sql, $params);
@@ -29,8 +33,8 @@ class Category extends Model {
     /**
      * Ana kategorileri getir (navigation için)
      */
-    public function getMainCategories() {
-        return $this->getActiveCategories(null);
+    public function getMainCategories($onlyMenu = true) {
+        return $this->getActiveCategories(null, $onlyMenu);
     }
     
     /**

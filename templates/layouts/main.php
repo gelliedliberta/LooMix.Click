@@ -46,7 +46,7 @@
     <link href="<?= asset('css/style.css') ?>" rel="stylesheet">
     
     <!-- Google AdSense -->
-    <?php if (defined('GOOGLE_ADSENSE_ID') && !empty(GOOGLE_ADSENSE_ID) && GOOGLE_ADSENSE_ID !== 'ca-pub-3967023544942784'): ?>
+    <?php if (ADS_ENABLED && defined('GOOGLE_ADSENSE_ID') && !empty(GOOGLE_ADSENSE_ID) && GOOGLE_ADSENSE_ID !== 'ca-pub-3967023544942784'): ?>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=<?= GOOGLE_ADSENSE_ID ?>" 
             crossorigin="anonymous"></script>
     <?php endif; ?>
@@ -163,18 +163,79 @@
                     <?= escape(SITE_NAME) ?>
                 </a>
                 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav" aria-label="Menüyü aç">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
+                <!-- Mobile Offcanvas Navigation -->
+                <div class="offcanvas offcanvas-end d-lg-none" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+                    <div class="offcanvas-header">
+                        <h5 class="offcanvas-title" id="mobileNavLabel"><?= escape(SITE_NAME) ?></h5>
+                        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+                    </div>
+                    <div class="offcanvas-body">
+                        <!-- Mobile Search -->
+                        <form class="mobile-search d-lg-none mb-3" method="GET" action="<?= url('/ara') ?>">
+                            <div class="input-group">
+                                <input class="form-control" type="search" name="q" placeholder="Haber ara..." value="<?= escape($_GET['q'] ?? '') ?>">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Main Navigation (Mobile) -->
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <?php if (!empty($mainCategories)): ?>
+                                <?php foreach (array_slice($mainCategories, 0, 10) as $category): ?>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= url('/kategori/' . $category['slug']) ?>">
+                                        <?= escape($category['name']) ?>
+                                    </a>
+                                </li>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= url('/kategori/genel') ?>">
+                                        <i class="fas fa-newspaper me-1 text-primary"></i>Genel
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= url('/kategori/teknoloji') ?>">
+                                        <i class="fas fa-laptop me-1 text-success"></i>Teknoloji
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= url('/kategori/spor') ?>">
+                                        <i class="fas fa-futbol me-1 text-warning"></i>Spor
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= url('/kategori/ekonomi') ?>">
+                                        <i class="fas fa-chart-line me-1 text-danger"></i>Ekonomi
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        </ul>
+
+                        <!-- Quick Links (Mobile only) -->
+                        <div class="d-lg-none mt-3 border-top pt-3">
+                            <h6 class="text-muted mb-2">Sayfalar</h6>
+                            <ul class="list-unstyled small mb-0">
+                                <li><a class="nav-link px-0" href="<?= url('/hakkimizda') ?>">Hakkımızda</a></li>
+                                <li><a class="nav-link px-0" href="<?= url('/iletisim') ?>">İletişim</a></li>
+                                <li><a class="nav-link px-0" href="<?= url('/gizlilik-politikasi') ?>">Gizlilik Politikası</a></li>
+                                <li><a class="nav-link px-0" href="<?= url('/site-haritasi') ?>">Site Haritası</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <!-- Main Navigation -->
                     <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= url('/') ?>">Ana Sayfa</a>
-                        </li>
                         <?php if (!empty($mainCategories)): ?>
-                            <?php foreach (array_slice($mainCategories, 0, 6) as $category): ?>
+                            <?php foreach (array_slice($mainCategories, 0, 9) as $category): ?>
                             <li class="nav-item">
                                 <a class="nav-link" href="<?= url('/kategori/' . $category['slug']) ?>">
                                     <?= escape($category['name']) ?>
@@ -206,7 +267,7 @@
                     </ul>
                     
                     <!-- Search -->
-                    <form class="d-flex" method="GET" action="<?= url('/ara') ?>">
+                    <form class="d-none d-lg-flex" method="GET" action="<?= url('/ara') ?>">
                         <div class="input-group">
                             <input class="form-control form-control-sm" type="search" name="q" placeholder="Haber ara..." value="<?= escape($_GET['q'] ?? '') ?>">
                             <button class="btn btn-outline-primary btn-sm" type="submit">
@@ -220,6 +281,7 @@
     </header>
     
     <!-- Header Ad -->
+    <?php if (ADS_ENABLED): ?>
     <div class="container-fluid bg-light py-2">
         <div class="container text-center">
             <div class="row justify-content-center">
@@ -229,6 +291,7 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
     
     <!-- Main Content -->
     <main id="main-content" role="main" class="min-vh-100 d-flex flex-column">
@@ -311,6 +374,7 @@
         </div>
         
         <!-- Footer Ad -->
+        <?php if (ADS_ENABLED): ?>
         <div class="container-fluid bg-white py-3 border-top">
             <div class="container">
                 <div class="row justify-content-center">
@@ -320,6 +384,7 @@
                 </div>
             </div>
         </div>
+        <?php endif; ?>
     </footer>
     
     <!-- JavaScript -->

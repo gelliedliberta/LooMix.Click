@@ -18,7 +18,10 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 }
 
 // Zaman dilimi ayarla
-date_default_timezone_set('Europe/Istanbul');
+if (!defined('APP_TIMEZONE')) {
+    define('APP_TIMEZONE', 'Europe/Istanbul');
+}
+date_default_timezone_set(APP_TIMEZONE);
 
 // Autoloader ve konfigürasyon
 require_once 'includes/autoloader.php';
@@ -36,10 +39,13 @@ set_exception_handler(function($e) {
     $uri = $_SERVER['REQUEST_URI'] ?? '';
     $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
     $xhr = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+    $reqContentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
 
     $isAdminApi = substr($uri, 0, 11) === '/admin/api/';
     $isPublicApi = substr($uri, 0, 5) === '/api/';
-    $wantsJson = (strpos($accept, 'application/json') !== false) || (strtolower($xhr) === 'xmlhttprequest');
+    $wantsJson = (strpos($accept, 'application/json') !== false)
+        || (strtolower($xhr) === 'xmlhttprequest')
+        || (stripos($reqContentType, 'application/json') !== false);
 
     if ($isAdminApi || $isPublicApi || $wantsJson) {
         http_response_code(500);
@@ -83,6 +89,10 @@ $router->get('/kategoriler', 'CategoryController@index');
 $router->get('/kategori/{slug}', 'CategoryController@show');
 $router->get('/kategori/{slug}/rss', 'CategoryController@rss');
 
+// Etiket sayfaları
+$router->get('/etiketler', 'TagController@index');
+$router->get('/etiket/{slug}', 'TagController@show');
+
 // Arama
 $router->get('/ara', 'HomeController@search');
 
@@ -120,6 +130,7 @@ $router->get('/admin/kategoriler', 'AdminController@categories');
 $router->get('/admin/api/categories/{id}', 'AdminController@getCategoryById');
 $router->post('/admin/api/categories/save', 'AdminController@saveCategory');
 $router->post('/admin/api/categories/{id}/toggle-status', 'AdminController@toggleCategoryStatus');
+$router->post('/admin/api/categories/{id}/toggle-menu', 'AdminController@toggleCategoryMenu');
 $router->post('/admin/api/categories/{id}/update-order', 'AdminController@updateCategoryOrder');
 $router->delete('/admin/api/categories/{id}/delete', 'AdminController@deleteCategory');
 
@@ -157,6 +168,9 @@ $router->get('/admin/ayarlar', 'AdminController@settings');
 $router->post('/admin/api/settings/save', 'AdminController@saveSettings');
 $router->post('/admin/api/settings/reset', 'AdminController@resetSettings');
 
+// Upload yardımcıları
+$router->post('/admin/api/uploads/create-date-folders', 'AdminController@createDateFolders');
+
 // Gelir raporları
 $router->get('/admin/gelir-raporlari', 'AdminController@revenueReports');
 $router->post('/admin/api/revenue/refresh', 'AdminController@refreshRevenueData');
@@ -167,6 +181,7 @@ $router->get('/admin/istatistikler', 'AdminController@statistics');
 
 // API endpoint'leri
 $router->get('/api/latest-news', 'ApiController@latestNews');
+$router->get('/api/tags/search', 'ApiController@searchTags');
 $router->get('/api/sitemap', 'ApiController@sitemap');
 // Ads API
 $router->get('/api/ads/load-zone/{zone}', 'ApiController@loadAdZone');
@@ -181,10 +196,13 @@ $router->notFound(function() {
     $uri = $_SERVER['REQUEST_URI'] ?? '';
     $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
     $xhr = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+    $reqContentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
 
     $isAdminApi = substr($uri, 0, 11) === '/admin/api/';
     $isPublicApi = substr($uri, 0, 5) === '/api/';
-    $wantsJson = (strpos($accept, 'application/json') !== false) || (strtolower($xhr) === 'xmlhttprequest');
+    $wantsJson = (strpos($accept, 'application/json') !== false)
+        || (strtolower($xhr) === 'xmlhttprequest')
+        || (stripos($reqContentType, 'application/json') !== false);
 
     if ($isAdminApi || $isPublicApi || $wantsJson) {
         http_response_code(404);

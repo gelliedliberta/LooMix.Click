@@ -196,6 +196,19 @@ a:hover {
     transition: transform 0.3s ease;
 }
 
+/* Responsive adjustments for side featured images */
+@media (max-width: 992px) {
+    .side-featured-wrapper {
+        height: 150px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .side-featured-wrapper {
+        height: 120px !important;
+    }
+}
+
 /* ==========================================================================
    News Cards
    ========================================================================== */
@@ -569,4 +582,121 @@ a:hover {
     .btn {
         border: 2px solid currentColor !important;
     }
+}
+
+/* ==========================================================================
+   Mobile Offcanvas Navigation
+   ========================================================================== */
+
+@media (max-width: 992px) {
+    .offcanvas .nav-link {
+        padding: 0.75rem 0;
+        font-weight: 500;
+        color: var(--dark-color);
+    }
+    .offcanvas .nav-link:hover {
+        background-color: var(--light-color);
+    }
+    .offcanvas .offcanvas-title {
+        font-weight: 700;
+    }
+    .mobile-search .form-control {
+        height: 42px;
+    }
+    .mobile-search .btn {
+        height: 42px;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar .nav-link {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+    }
+}
+
+/* ==========================================================================
+   Tag Pages
+   ========================================================================== */
+
+.tag-header .badge {
+    font-weight: 500;
+}
+
+.autocomplete-dropdown {
+    max-height: 320px;
+    overflow-y: auto;
+    min-width: 100%;
+}
+
+.autocomplete-dropdown .list-group-item {
+    cursor: pointer;
+}
+
+.autocomplete-dropdown .list-group-item:hover {
+    background-color: var(--light-color);
+}
+
+/* ==========================================================================
+   News Detail - Hero Image (standardized size)
+   ========================================================================== */
+.news-article .news-image {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+.news-article .news-hero {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+    max-height: 560px;
+    overflow: hidden;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    background: var(--light-color);
+}
+
+.news-article .news-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .news-article .news-hero {
+        aspect-ratio: 16 / 9;
+        max-height: 360px;
+    }
+}
+
+/* ========================================================================== 
+   News Detail - Content responsivity & overflow guards
+   ========================================================================== */
+.news-article .news-content {
+    overflow-wrap: anywhere;
+    word-wrap: break-word;
+}
+
+.news-article .news-content img,
+.news-article .news-content iframe,
+.news-article .news-content video {
+    max-width: 100%;
+    height: auto;
+}
+
+.news-article .news-content table {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.news-article .news-content pre,
+.news-article .news-content code {
+    white-space: pre-wrap;
+    word-break: break-word;
 }
