@@ -86,16 +86,34 @@
         .breaking-news .marquee {
             overflow: hidden;
             white-space: nowrap;
+            cursor: pointer;
         }
         
         .breaking-news .marquee span {
             display: inline-block;
-            animation: scroll 30s linear infinite;
+            padding-left: 100%;
+            animation: scroll 50s linear infinite;
+            will-change: transform;
+        }
+        
+        /* Mouse ile üzerine gelince animasyonu duraklat - çoklu selector */
+        .breaking-news:hover .marquee span,
+        .breaking-news .marquee:hover span {
+            animation-play-state: paused !important;
+        }
+        
+        /* Link hover efekti */
+        .breaking-news .marquee a {
+            transition: opacity 0.2s ease;
+        }
+        
+        .breaking-news .marquee a:hover {
+            opacity: 0.85;
         }
         
         @keyframes scroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
         
         .footer {

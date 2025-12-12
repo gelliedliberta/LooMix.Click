@@ -28,8 +28,10 @@
                                         <span class="badge bg-<?= $mainFeatured['category_color'] ?: 'primary' ?> mb-2">
                                             <?= escape($mainFeatured['category_name']) ?>
                                         </span>
-                                        <h2 class="h3 text-white mb-2 fw-bold"><?= escape($mainFeatured['title']) ?></h2>
-                                        <p class="text-light mb-2 opacity-75"><?= truncateText(strip_tags($mainFeatured['summary']), 120) ?></p>
+                                        <!-- Responsive başlık: mobilde küçük, desktop'ta büyük -->
+                                        <h2 class="text-white mb-2 fw-bold featured-carousel-title"><?= escape($mainFeatured['title']) ?></h2>
+                                        <!-- Summary text: mobilde gizli, tablet+ görünür -->
+                                        <p class="text-light mb-2 opacity-75 d-none d-md-block"><?= truncateText(strip_tags($mainFeatured['summary']), 120) ?></p>
                                         <div class="d-flex align-items-center text-light small opacity-75">
                                             <i class="far fa-clock me-1"></i>
                                             <?= formatDate($mainFeatured['publish_date'], 'd.m.Y H:i') ?>
@@ -102,31 +104,6 @@
     </section>
     <?php endif; ?>
     
-    <!-- Breaking News Ticker -->
-    <?php if (!empty($breakingNews)): ?>
-    <div class="breaking-news-ticker mb-4">
-        <div class="alert alert-danger border-0 shadow-sm">
-            <div class="d-flex align-items-center">
-                <div class="breaking-label bg-danger text-white px-3 py-2 rounded me-3">
-                    <i class="fas fa-bolt me-1"></i>
-                    <strong>SON DAKİKA</strong>
-                </div>
-                <div class="breaking-content flex-grow-1">
-                    <div class="breaking-scroll">
-                        <?php foreach ($breakingNews as $breaking): ?>
-                            <span class="breaking-item">
-                                <a href="<?= url('/haber/' . $breaking['slug']) ?>" class="text-dark text-decoration-none fw-bold">
-                                    <?= escape($breaking['title']) ?>
-                                </a>
-                            </span>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
     <!-- Main Content -->
     <div class="row">
         <!-- News Content -->

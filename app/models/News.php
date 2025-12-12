@@ -48,12 +48,15 @@ class News extends Model {
     
     /**
      * Son dakika haberlerini getir
+     * Performans için sadece gerekli alanlar çekiliyor
      */
     public function getBreakingNews($limit = 5) {
-        $sql = "SELECT n.*, c.name as category_name, c.slug as category_slug 
+        // Layout'ta sadece title ve slug kullanıldığı için optimize edilmiş sorgu
+        $sql = "SELECT n.id, n.title, n.slug 
                 FROM {$this->table} n 
-                INNER JOIN categories c ON n.category_id = c.id 
-                WHERE n.status = 'published' AND n.is_breaking = 1 AND n.publish_date <= NOW() 
+                WHERE n.status = 'published' 
+                AND n.is_breaking = 1 
+                AND n.publish_date <= NOW() 
                 ORDER BY n.publish_date DESC 
                 LIMIT :limit";
         

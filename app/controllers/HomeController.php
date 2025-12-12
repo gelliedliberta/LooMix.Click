@@ -14,6 +14,9 @@ class HomeController extends Controller {
             $newsModel = new News();
             $categoryModel = new Category();
             
+            // Son dakika haberleri - ÖNCELİKLİ (header'da gösteriliyor)
+            $breakingNews = $newsModel->getBreakingNews(5);
+            
             // Öne çıkan haberler (slider için en az 7 öğe: 5 slider + 2 yan)
             $featuredNews = $newsModel->getFeaturedNews(7);
             
@@ -22,9 +25,6 @@ class HomeController extends Controller {
             
             // Popüler haberler
             $popularNews = $newsModel->getPopularNews(8);
-            
-            // Son dakika haberleri
-            $breakingNews = $newsModel->getBreakingNews(5);
             
             // Kategoriler ve haber sayıları
             $categories = $categoryModel->getCategoriesWithNewsCount();

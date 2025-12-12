@@ -4,7 +4,10 @@
 
 document.addEventListener('DOMContentLoaded', function() {
     
-    // 1. Smooth Scrolling
+    // 1. Header Breaking News Ticker - Instant Animation
+    initHeaderBreakingNews();
+    
+    // 2. Smooth Scrolling
     const links = document.querySelectorAll('a[href^="#"]');
     links.forEach(link => {
         link.addEventListener('click', function(e) {
@@ -17,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 2. Search Enhancement + Tag Autocomplete
+    // 3. Search Enhancement + Tag Autocomplete
     const searchInput = document.querySelector('input[name="q"]');
     if (searchInput) {
         // Basic: keep placeholder debounce for now
@@ -64,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.addEventListener('click', (e) => { if (!ac.contains(e.target) && e.target !== searchInput) hideDropdown(); });
     }
     
-    // 3. News Card Hover Effects
+    // 4. News Card Hover Effects
     const newsCards = document.querySelectorAll('.news-card');
     newsCards.forEach(card => {
         card.addEventListener('mouseenter', function() {
@@ -75,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // 4. Back to Top Button
+    // 5. Back to Top Button
     const backToTop = document.createElement('button');
     backToTop.innerHTML = '<i class="fas fa-arrow-up"></i>';
     backToTop.classList.add('back-to-top');
@@ -99,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 5. Mobile offcanvas: close on link click
+    // 6. Mobile offcanvas: close on link click
     const offcanvasEl = document.getElementById('mobileNav');
     if (offcanvasEl) {
         const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
@@ -120,4 +123,44 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
+}
+
+/**
+ * Header Breaking News Animasyon Optimizasyonu
+ * Sayfa yüklenir yüklenmez animasyonu başlatır
+ */
+function initHeaderBreakingNews() {
+    // Header'daki breaking news (.marquee)
+    const marquees = document.querySelectorAll('.breaking-news .marquee');
+    
+    marquees.forEach(marquee => {
+        const span = marquee.querySelector('span');
+        if (!span) return;
+        
+        // İçeriği duplicate et (seamless loop için)
+        const links = span.querySelectorAll('a');
+        if (links.length > 0) {
+            links.forEach(link => {
+                const clone = link.cloneNode(true);
+                span.appendChild(clone);
+            });
+        }
+        
+        // Force animation start (GPU acceleration)
+        span.style.transform = 'translate3d(0, 0, 0)';
+        
+        // Animasyonu instant tetikle
+        requestAnimationFrame(() => {
+            span.style.animationPlayState = 'running';
+        });
+        
+        // Hover pause event listeners (ekstra güvence)
+        marquee.addEventListener('mouseenter', () => {
+            span.style.animationPlayState = 'paused';
+        });
+        
+        marquee.addEventListener('mouseleave', () => {
+            span.style.animationPlayState = 'running';
+        });
+    });
 }

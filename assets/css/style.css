@@ -105,6 +105,56 @@ a:hover {
     text-decoration: underline !important;
 }
 
+/* Breaking scroll için instant animasyon */
+.breaking-scroll {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    width: 100%;
+    cursor: pointer;
+}
+
+.breaking-scroll > span {
+    display: inline-block;
+    padding-left: 100%;
+    animation: scroll-breaking 50s linear infinite;
+    will-change: transform;
+}
+
+/* Mouse ile üzerine gelince animasyonu duraklat - çoklu selector */
+.breaking-news-ticker:hover .breaking-scroll > span,
+.breaking-scroll:hover > span {
+    animation-play-state: paused !important;
+}
+
+@keyframes scroll-breaking {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    100% {
+        transform: translate3d(-100%, 0, 0);
+    }
+}
+
+.breaking-item {
+    display: inline-block;
+    padding: 0 2rem;
+}
+
+.breaking-item a {
+    transition: opacity 0.2s ease;
+}
+
+/* Hover'da linkleri vurgula */
+.breaking-item a:hover {
+    opacity: 0.85;
+    text-decoration: underline !important;
+}
+
+.breaking-content {
+    overflow: hidden;
+}
+
 /* ==========================================================================
    Header Styles
    ========================================================================== */
@@ -177,6 +227,31 @@ a:hover {
 
 .hero-section .featured-main img {
     transition: transform 0.3s ease;
+}
+
+/* Featured carousel başlık - responsive font size */
+.featured-carousel-title {
+    font-size: 1.75rem; /* Desktop: ~28px */
+    line-height: 1.3;
+}
+
+@media (max-width: 992px) {
+    .featured-carousel-title {
+        font-size: 1.5rem; /* Tablet: ~24px */
+    }
+}
+
+@media (max-width: 768px) {
+    .featured-carousel-title {
+        font-size: 1.25rem; /* Mobile landscape: ~20px */
+    }
+}
+
+@media (max-width: 576px) {
+    .featured-carousel-title {
+        font-size: 1.1rem; /* Mobile portrait: ~17.6px */
+        line-height: 1.4;
+    }
 }
 
 .hero-section .featured-main:hover img {
@@ -423,7 +498,14 @@ a:hover {
         height: 250px !important;
     }
     
-    .breaking-news-content {
+    /* Featured carousel overlay padding'i küçült */
+    .featured-image-wrapper .position-absolute.bottom-0 {
+        padding: 1.5rem !important;
+    }
+    
+    /* Mobilde breaking news animasyonları biraz daha hızlı - her ikisi de aynı hız */
+    .breaking-scroll > span,
+    .breaking-news .marquee span {
         animation-duration: 30s;
     }
     
@@ -439,6 +521,22 @@ a:hover {
 @media (max-width: 576px) {
     .hero-section .featured-image-wrapper {
         height: 200px !important;
+    }
+    
+    /* Mobile portrait: daha küçük padding */
+    .featured-image-wrapper .position-absolute.bottom-0 {
+        padding: 0.75rem !important;
+    }
+    
+    /* Badge ve tarih bilgisi daha küçük */
+    .featured-image-wrapper .badge {
+        font-size: 0.7rem !important;
+        padding: 0.25rem 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .featured-image-wrapper .small {
+        font-size: 0.65rem !important;
     }
     
     .featured-side .featured-thumb {
