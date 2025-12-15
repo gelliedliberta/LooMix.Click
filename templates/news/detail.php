@@ -129,9 +129,12 @@
                 
                 <!-- Content Ad -->
                 <?php if (ADS_ENABLED): ?>
-                <div class="content-ad-top text-center mb-4">
-                    <?= displayAd('content_inline') ?>
-                </div>
+                    <?php $contentAd = displayAd('content_inline'); ?>
+                    <?php if (!empty($contentAd)): ?>
+                    <div class="content-ad-top text-center mb-4">
+                        <?= $contentAd ?>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
                 
                 <!-- Article Content -->
@@ -185,9 +188,12 @@
                 
                 <!-- Sidebar Ad -->
                 <?php if (ADS_ENABLED): ?>
-                <div class="sidebar-widget mb-4">
-                    <?= displayAd('sidebar_square') ?>
-                </div>
+                    <?php $sidebarAd = displayAd('sidebar_square'); ?>
+                    <?php if (!empty($sidebarAd)): ?>
+                    <div class="sidebar-widget mb-4">
+                        <?= $sidebarAd ?>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
                 
                 <!-- Latest News -->

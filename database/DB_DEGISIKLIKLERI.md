@@ -14,6 +14,84 @@ Bu dosya, veritabanında yapılan tüm değişiklikleri kronolojik olarak özetl
 - `templates/home/search.php` oluşturuldu; arama formu, sonuç listesi, vurgulama ve sayfalama içerir.
 - Etki: `/ara?q=...` istekleri yayınlanmış haberlerde hızlı ve güvenli arama yapar; UI hazır.
 
+## 2025-12-15 (İletişim Bilgileri Yönetimi)
+- **Özellik**: İletişim sayfasındaki e-posta, telefon, adres ve sosyal medya kullanıcı adları admin panelden yönetilebilir hale getirildi.
+- **Değişiklikler**:
+  - `app/controllers/AdminController.php` - 8 yeni ayar anahtarı eklendi (contact_*)
+  - `includes/functions.php` - 2 yeni helper fonksiyon:
+    - `getSetting($key, $default)` - Site ayarlarını getir
+    - `getContactInfo()` - Tüm iletişim bilgilerini array olarak döndür
+  - `templates/home/contact.php` - Dinamik iletişim bilgileri gösterimi
+    - E-posta adresleri veritabanından
+    - Telefon ve adres opsiyonel (varsa gösterilir)
+    - Sosyal medya linkleri `social_media_links` tablosundan
+    - Kullanıcı adları `site_settings` tablosundan
+  - `templates/admin/settings/index.php` - "İletişim Bilgileri" sekmesi eklendi
+    - E-posta adresleri bölümü
+    - İletişim bilgileri (telefon, adres)
+    - Sosyal medya kullanıcı adları bölümü
+- **Ayar Anahtarları**:
+  - `contact_email` - Genel iletişim e-posta
+  - `contact_email_editor` - Editör e-posta
+  - `contact_phone` - Telefon (opsiyonel)
+  - `contact_address` - Adres (opsiyonel)
+  - `contact_twitter_handle` - Twitter kullanıcı adı
+  - `contact_facebook_page` - Facebook sayfa adı
+  - `contact_instagram_handle` - Instagram kullanıcı adı
+  - `contact_linkedin_page` - LinkedIn sayfa adı
+- **Varsayılan Değerler**: info@loomix.click, editor@loomix.click, @LooMixClick, vb.
+- **Dokümantasyon**: `database/CONTACT_INFO_MANAGEMENT.md` - Detaylı kullanım rehberi
+- **Etki**: İletişim bilgileri artık hardcoded değil, admin panelden kolayca değiştirilebiliyor. Sosyal medya sistemiyle entegre.
+
+## 2025-12-15 (Reklam Sistemi Optimizasyonu)
+- **Problem**: Reklam alanları sabit boyutlarla render ediliyordu, reklam yokken bile boşluk bırakıyordu.
+- **Çözüm**: Dinamik boyutlandırma sistemi oluşturuldu.
+- **Değişiklikler**:
+  - `app/helpers/AdManager.php` - Sabit boyut ayarları kaldırıldı, responsive AdSense zorunlu hale getirildi
+  - `assets/css/style.css` - `.ad-zone` min-height kaldırıldı, dinamik yapı eklendi
+  - Template'ler - Reklam yoksa container bile oluşturulmuyor (conditional rendering)
+    - `templates/layouts/main.php` - Header/Footer ad container'ları
+    - `templates/home/index.php` - Content/Sidebar ads
+    - `templates/news/detail.php` - Content/Sidebar ads
+    - `templates/category/show.php` - Sidebar ads
+    - `templates/tag/show.php` - Sidebar ads
+- **Özellikler**:
+  - ✅ Reklam yoksa hiç div oluşturulmaz (0px boşluk)
+  - ✅ Reklam varsa dinamik boyutlanır (AdSense responsive)
+  - ✅ Debug mode'da minimal placeholder (50px)
+  - ✅ Production'da temiz, boşluksuz görünüm
+  - ✅ CLS (Cumulative Layout Shift) optimizasyonu
+  - ✅ Performans artışı (gereksiz DOM elementleri yok)
+- **Dokümantasyon**: `database/AD_SYSTEM_OPTIMIZATION.md` - Detaylı karşılaştırma ve test rehberi
+- **Etki**: Sayfa daha hızlı yükleniyor, reklam yokken boşluklar gözükmüyor, kullanıcı deneyimi iyileşti.
+
+## 2025-12-15 (Sosyal Medya Yönetim Sistemi)
+- **Özellik**: Admin panelden sosyal medya linklerinin yönetimi için tam kapsamlı sistem eklendi.
+- **Migration**: `database/migrations/007_social_media_links.sql`
+- **Tablo**: `social_media_links` - Platform bilgileri, URL'ler, görünürlük ayarları
+  - Kolonlar: platform (unique), name, icon, url, is_active, display_order, show_in_header, show_in_footer, color
+  - 9 varsayılan platform (Facebook, Twitter/X, Instagram, YouTube, LinkedIn, TikTok, Telegram, WhatsApp, RSS)
+- **Model**: `app/models/SocialMedia.php` - CRUD işlemleri, toggle fonksiyonları, platform yönetimi
+- **Controller**: `app/controllers/AdminController.php` - 8 yeni admin API endpoint'i
+  - `/admin/sosyal-medya` - Yönetim sayfası
+  - `/admin/api/social-media/*` - CRUD ve toggle API'leri
+- **Template**: `templates/admin/social-media/index.php` - Modern yönetim arayüzü, canlı önizleme
+- **Helper**: `includes/functions.php` 
+  - `displaySocialLinks($position, $size, $class)` - Header/footer için dinamik link gösterimi
+  - `getSocialLink($platform)` - Tek platform linki
+- **Frontend**: `templates/layouts/main.php` güncellendi
+  - Header ve footer'daki static linkler dynamic helper fonksiyonlarıyla değiştirildi
+- **Admin Menu**: Sosyal Medya menüsü eklendi
+- **Özellikler**:
+  - ✅ Tek tıkla aktif/pasif (genel, header, footer ayrı ayrı)
+  - ✅ Sıralama düzenleme (drag-drop benzeri)
+  - ✅ URL, ikon, renk özelleştirmesi
+  - ✅ Canlı önizleme (header ve footer)
+  - ✅ RSS linki korumalı (silinemez)
+  - ✅ CSRF korumalı tüm işlemler
+- **Dokümantasyon**: `database/SOCIAL_MEDIA_OPERATIONS.md` - Detaylı kullanım kılavuzu
+- **Etki**: Sosyal medya linkleri artık hardcoded değil, admin panelden kolayca yönetilebiliyor. Header ve footer'da ayrı kontrol.
+
 ## Notlar
 ## 2025-10-11 (Zaman Dilimi Senkronizasyonu)
 - Uygulama zaman dilimi yapılandırması eklendi: `APP_TIMEZONE` (varsayılan: Europe/Istanbul)

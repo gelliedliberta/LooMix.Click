@@ -166,12 +166,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <div class="social-links">
-                        <a href="#" class="text-muted me-2"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="text-muted me-2"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="text-muted me-2"><i class="fab fa-instagram"></i></a>
-                        <a href="<?= url('/rss') ?>" class="text-muted"><i class="fas fa-rss"></i></a>
-                    </div>
+                    <?= displaySocialLinks('header', 'small') ?>
                 </div>
             </div>
             
@@ -298,17 +293,18 @@
         </div>
     </header>
     
-    <!-- Header Ad -->
+    <!-- Header Ad - Sadece reklam varsa gösterilir -->
     <?php if (ADS_ENABLED): ?>
-    <div class="container-fluid bg-light py-2">
-        <div class="container text-center">
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <?= displayAd('header_banner') ?>
-                </div>
+        <?php 
+        $headerAd = displayAd('header_banner');
+        if (!empty($headerAd)): 
+        ?>
+        <div class="container-fluid bg-light py-2">
+            <div class="container text-center">
+                <?= $headerAd ?>
             </div>
         </div>
-    </div>
+        <?php endif; ?>
     <?php endif; ?>
     
     <!-- Main Content -->
@@ -323,12 +319,7 @@
                 <div class="col-lg-4">
                     <h5 class="text-white mb-3"><?= escape(SITE_NAME) ?></h5>
                     <p class="text-light"><?= escape(SITE_DESCRIPTION) ?></p>
-                    <div class="social-links">
-                        <a href="#" class="text-light me-3"><i class="fab fa-facebook fa-2x"></i></a>
-                        <a href="#" class="text-light me-3"><i class="fab fa-twitter fa-2x"></i></a>
-                        <a href="#" class="text-light me-3"><i class="fab fa-instagram fa-2x"></i></a>
-                        <a href="#" class="text-light"><i class="fab fa-youtube fa-2x"></i></a>
-                    </div>
+                    <?= displaySocialLinks('footer', 'large') ?>
                 </div>
                 
                 <div class="col-lg-2">
@@ -391,17 +382,18 @@
             </div>
         </div>
         
-        <!-- Footer Ad -->
+        <!-- Footer Ad - Sadece reklam varsa gösterilir -->
         <?php if (ADS_ENABLED): ?>
-        <div class="container-fluid bg-white py-3 border-top">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8 text-center">
-                        <?= displayAd('footer_banner') ?>
-                    </div>
+            <?php 
+            $footerAd = displayAd('footer_banner');
+            if (!empty($footerAd)): 
+            ?>
+            <div class="container-fluid bg-white py-3 border-top">
+                <div class="container text-center">
+                    <?= $footerAd ?>
                 </div>
             </div>
-        </div>
+            <?php endif; ?>
         <?php endif; ?>
     </footer>
     

@@ -189,9 +189,12 @@
             
             <!-- Content Ad -->
             <?php if (ADS_ENABLED): ?>
-            <div class="content-ad text-center mb-5">
-                <?= displayAd('content_inline') ?>
-            </div>
+                <?php $inlineAd = displayAd('content_inline'); ?>
+                <?php if (!empty($inlineAd)): ?>
+                <div class="content-ad text-center mb-5">
+                    <?= $inlineAd ?>
+                </div>
+                <?php endif; ?>
             <?php endif; ?>
             
         </div>
@@ -238,9 +241,12 @@
                 
                 <!-- Sidebar Ad -->
                 <?php if (ADS_ENABLED): ?>
-                <div class="sidebar-widget mb-4">
-                    <?= displayAd('sidebar_square') ?>
-                </div>
+                    <?php $sidebarAd = displayAd('sidebar_square'); ?>
+                    <?php if (!empty($sidebarAd)): ?>
+                    <div class="sidebar-widget mb-4">
+                        <?= $sidebarAd ?>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
                 
                 <!-- Categories Widget -->

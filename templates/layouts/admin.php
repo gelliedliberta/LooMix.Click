@@ -365,6 +365,13 @@
                             Reklam Alanları
                         </a>
                     </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link <?= strpos($pageTitle ?? '', 'Sosyal Medya') !== false ? 'active' : '' ?>" href="<?= url('/admin/sosyal-medya') ?>">
+                            <i class="fas fa-share-alt"></i>
+                            Sosyal Medya
+                        </a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<?= url('/admin/gelir-raporlari') ?>">
                             <i class="fas fa-chart-line"></i>

@@ -54,20 +54,16 @@ class AdManager {
      * Reklam render et
      */
     private function renderAd($zone, $attributes = []) {
-        $html = '';
-        
-        // Wrapper div
+        // Wrapper div - Sabit boyut yok, sadece content boyutuna göre
         $classes = ['ad-zone'];
         if (isset($attributes['class'])) {
             $classes[] = $attributes['class'];
         }
         
-        $style = '';
-        if ($zone['width'] && $zone['height']) {
-            $style = sprintf('max-width: %dpx; max-height: %dpx;', $zone['width'], $zone['height']);
-        }
+        // Sadece overflow kontrolü için style (reklam yüklendikten sonra dinamik boyut)
+        $style = 'overflow: hidden;';
         
-        $html .= sprintf(
+        $html = sprintf(
             '<div class="%s" data-zone="%s" data-ad-type="%s" style="%s">',
             implode(' ', $classes),
             $zone['zone_name'],
@@ -86,7 +82,13 @@ class AdManager {
                 $html .= $this->renderBannerAd($zone);
                 break;
             default:
-                $html .= $this->getPlaceholderAd($zone['zone_name']);
+                // Placeholder sadece DEBUG modunda göster
+                if (DEBUG_MODE) {
+                    $html .= $this->getPlaceholderAd($zone['zone_name']);
+                } else {
+                    // Production'da reklam yoksa hiç div oluşturma
+                    return '';
+                }
         }
         
         $html .= '</div>';
@@ -115,21 +117,18 @@ class AdManager {
             GOOGLE_ADSENSE_ID
         );
 
-        // Ad unit
+        // Ad unit - Responsive veya dinamik boyut
+        // Sabit boyut kullanmıyoruz, AdSense kendi boyutunu belirleyecek
         $insStyle = 'display:block';
-        if (!$zone['is_responsive'] && $zone['width'] && $zone['height']) {
-            $insStyle = sprintf('display:inline-block;width:%dpx;height:%dpx', $zone['width'], $zone['height']);
-        }
-
+        
         $html .= '<ins class="adsbygoogle"';
         $html .= sprintf(' style="%s"', $insStyle);
         $html .= sprintf(' data-ad-client="%s"', GOOGLE_ADSENSE_ID);
         $html .= sprintf(' data-ad-slot="%s"', $slotId);
-
-        if ($zone['is_responsive']) {
-            $html .= ' data-ad-format="auto"';
-            $html .= ' data-full-width-responsive="true"';
-        }
+        
+        // Her zaman responsive yap (reklam yoksa yer kaplamaz)
+        $html .= ' data-ad-format="auto"';
+        $html .= ' data-full-width-responsive="true"';
 
         $html .= '></ins>';
         // Not: push işlemi client tarafında ad-detection.js initializeAds() ile yapılır
@@ -172,19 +171,19 @@ class AdManager {
     }
     
     /**
-     * Placeholder reklam
+     * Placeholder reklam (sadece DEBUG modunda)
      */
     private function getPlaceholderAd($zoneName) {
         if (DEBUG_MODE) {
             return sprintf(
-                '<div class="ad-placeholder bg-light border p-3 text-center text-muted">
-                    <i class="fas fa-ad fa-2x mb-2"></i><br>
-                    <small>Reklam Alanı: %s</small>
+                '<div class="ad-placeholder bg-light border p-2 text-center text-muted" style="min-height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <small><i class="fas fa-ad me-2"></i>Reklam Alanı: %s</small>
                 </div>',
                 $zoneName
             );
         }
         
+        // Production'da reklam yoksa hiçbir şey gösterme
         return '';
     }
     
@@ -410,21 +409,17 @@ class AdManager {
     
     /**
      * Lazy loading için reklam placeholder'ı
+     * Artık sabit boyut kullanmıyoruz - reklam yüklendikçe yer açılacak
      */
-    public function getLazyAdPlaceholder($zoneName, $height = 250) {
+    public function getLazyAdPlaceholder($zoneName) {
+        // Sadece loading indicator, sabit boyut yok
         return sprintf(
-            '<div class="ad-lazy-placeholder bg-light d-flex align-items-center justify-content-center" 
-                  data-zone="%s" style="height: %dpx; min-height: %dpx;">
-                <div class="text-center text-muted">
-                    <div class="spinner-border spinner-border-sm" role="status">
-                        <span class="visually-hidden">Yükleniyor...</span>
-                    </div>
-                    <div class="small mt-2">Reklam yükleniyor...</div>
+            '<div class="ad-lazy-placeholder text-center py-2" data-zone="%s">
+                <div class="spinner-border spinner-border-sm text-muted" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
                 </div>
             </div>',
-            $zoneName,
-            $height,
-            $height
+            $zoneName
         );
     }
 }

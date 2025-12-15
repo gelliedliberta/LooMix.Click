@@ -2,6 +2,11 @@
 /**
  * İletişim Sayfası
  */
+
+// İletişim bilgilerini ve sosyal medya linklerini getir
+$contactInfo = getContactInfo();
+$socialMedia = new SocialMedia();
+$socialLinks = $socialMedia->getActive();
 ?>
 
 <div class="container my-5">
@@ -20,15 +25,32 @@
                                 <i class="fas fa-envelope text-primary me-3"></i>
                                 E-posta
                             </h4>
-                            <p class="mb-2">Genel sorular ve öneriler için:</p>
-                            <a href="mailto:info@loomix.click" class="text-decoration-none">
-                                info@loomix.click
-                            </a>
                             
-                            <p class="mt-3 mb-2">Editör ekibi için:</p>
-                            <a href="mailto:editor@loomix.click" class="text-decoration-none">
-                                editor@loomix.click
+                            <?php if (!empty($contactInfo['email'])): ?>
+                            <p class="mb-2">Genel sorular ve öneriler için:</p>
+                            <a href="mailto:<?= escape($contactInfo['email']) ?>" class="text-decoration-none">
+                                <?= escape($contactInfo['email']) ?>
                             </a>
+                            <?php endif; ?>
+                            
+                            <?php if (!empty($contactInfo['email_editor'])): ?>
+                            <p class="mt-3 mb-2">Editör ekibi için:</p>
+                            <a href="mailto:<?= escape($contactInfo['email_editor']) ?>" class="text-decoration-none">
+                                <?= escape($contactInfo['email_editor']) ?>
+                            </a>
+                            <?php endif; ?>
+                            
+                            <?php if (!empty($contactInfo['phone'])): ?>
+                            <p class="mt-3 mb-2">Telefon:</p>
+                            <a href="tel:<?= escape(preg_replace('/[^0-9+]/', '', $contactInfo['phone'])) ?>" class="text-decoration-none">
+                                <?= escape($contactInfo['phone']) ?>
+                            </a>
+                            <?php endif; ?>
+                            
+                            <?php if (!empty($contactInfo['address'])): ?>
+                            <p class="mt-3 mb-2">Adres:</p>
+                            <p class="text-muted small"><?= escape($contactInfo['address']) ?></p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -41,22 +63,35 @@
                                 Sosyal Medya
                             </h4>
                             <div class="d-flex flex-column gap-2">
-                                <a href="#" class="text-decoration-none">
-                                    <i class="fab fa-twitter text-info me-2"></i>
-                                    @LooMixClick
-                                </a>
-                                <a href="#" class="text-decoration-none">
-                                    <i class="fab fa-facebook text-primary me-2"></i>
-                                    LooMix.Click
-                                </a>
-                                <a href="#" class="text-decoration-none">
-                                    <i class="fab fa-instagram text-danger me-2"></i>
-                                    @loomixclick
-                                </a>
-                                <a href="#" class="text-decoration-none">
-                                    <i class="fab fa-linkedin text-primary me-2"></i>
-                                    LooMix Click
-                                </a>
+                                <?php if (!empty($socialLinks)): ?>
+                                    <?php foreach ($socialLinks as $link): ?>
+                                        <?php if (!empty($link['url']) && $link['url'] !== '#'): ?>
+                                            <?php 
+                                            $isInternal = (strpos($link['url'], 'http') !== 0 && strpos($link['url'], '//') !== 0);
+                                            $finalUrl = $isInternal ? url($link['url']) : $link['url'];
+                                            $target = $isInternal ? '' : ' target="_blank" rel="noopener noreferrer"';
+                                            
+                                            // Platform için özel kullanıcı adı göster (varsa)
+                                            $displayText = $link['name'];
+                                            if ($link['platform'] === 'twitter' && !empty($contactInfo['twitter_handle'])) {
+                                                $displayText = $contactInfo['twitter_handle'];
+                                            } elseif ($link['platform'] === 'facebook' && !empty($contactInfo['facebook_page'])) {
+                                                $displayText = $contactInfo['facebook_page'];
+                                            } elseif ($link['platform'] === 'instagram' && !empty($contactInfo['instagram_handle'])) {
+                                                $displayText = $contactInfo['instagram_handle'];
+                                            } elseif ($link['platform'] === 'linkedin' && !empty($contactInfo['linkedin_page'])) {
+                                                $displayText = $contactInfo['linkedin_page'];
+                                            }
+                                            ?>
+                                            <a href="<?= escape($finalUrl) ?>" class="text-decoration-none"<?= $target ?>>
+                                                <i class="<?= escape($link['icon']) ?> me-2" style="color: <?= escape($link['color'] ?? '#6c757d') ?>"></i>
+                                                <?= escape($displayText) ?>
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <p class="text-muted small">Sosyal medya linkleri henüz eklenmedi.</p>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

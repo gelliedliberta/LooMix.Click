@@ -348,4 +348,168 @@ function renderNewsContent($html) {
     }
     return $output;
 }
+
+/**
+ * Sosyal medya butonlarını göster
+ * 
+ * @param string $position 'header' veya 'footer'
+ * @param string $size 'small' (default), 'large', 'xlarge'
+ * @param string $class Ek CSS class'ları
+ * @return string HTML çıktısı
+ */
+function displaySocialLinks($position = 'header', $size = 'small', $class = '') {
+    try {
+        $socialModel = new SocialMedia();
+        $links = $socialModel->getActive($position);
+        
+        if (empty($links)) {
+            return '';
+        }
+        
+        // Size class belirleme
+        $sizeClass = '';
+        switch ($size) {
+            case 'large':
+                $sizeClass = 'fa-2x';
+                break;
+            case 'xlarge':
+                $sizeClass = 'fa-3x';
+                break;
+            default:
+                $sizeClass = '';
+        }
+        
+        $output = '<div class="social-links ' . escape($class) . '">';
+        
+        foreach ($links as $link) {
+            // URL kontrolü
+            if (empty($link['url']) || $link['url'] === '#') {
+                continue; // URL yoksa gösterme
+            }
+            
+            // Internal link mi (RSS gibi)
+            $isInternal = (strpos($link['url'], 'http') !== 0 && strpos($link['url'], '//') !== 0);
+            $finalUrl = $isInternal ? url($link['url']) : $link['url'];
+            
+            // Target belirleme
+            $target = $isInternal ? '' : ' target="_blank" rel="noopener noreferrer"';
+            
+            // Color style
+            $colorStyle = '';
+            if (!empty($link['color'])) {
+                $colorStyle = ' data-color="' . escape($link['color']) . '"';
+            }
+            
+            // Link oluştur
+            $linkClass = ($position === 'footer') ? 'text-light' : 'text-muted';
+            $spacing = ($position === 'footer') ? 'me-3' : 'me-2';
+            
+            $output .= sprintf(
+                '<a href="%s" class="%s %s" title="%s"%s%s><i class="%s %s"></i></a>',
+                escape($finalUrl),
+                $linkClass,
+                $spacing,
+                escape($link['name']),
+                $target,
+                $colorStyle,
+                escape($link['icon']),
+                $sizeClass
+            );
+        }
+        
+        $output .= '</div>';
+        
+        return $output;
+        
+    } catch (Exception $e) {
+        // Hata durumunda boş string döndür, sessiz hata
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log('displaySocialLinks error: ' . $e->getMessage());
+        }
+        return '';
+    }
+}
+
+/**
+ * Tek bir sosyal medya linkini HTML olarak döndür
+ * 
+ * @param string $platform Platform adı (facebook, twitter, vb.)
+ * @return string HTML çıktısı
+ */
+function getSocialLink($platform) {
+    try {
+        $socialModel = new SocialMedia();
+        $link = $socialModel->getByPlatform($platform);
+        
+        if (!$link || !$link['is_active'] || empty($link['url'])) {
+            return '';
+        }
+        
+        $isInternal = (strpos($link['url'], 'http') !== 0 && strpos($link['url'], '//') !== 0);
+        $finalUrl = $isInternal ? url($link['url']) : $link['url'];
+        $target = $isInternal ? '' : ' target="_blank" rel="noopener noreferrer"';
+        
+        return sprintf(
+            '<a href="%s" title="%s"%s><i class="%s"></i></a>',
+            escape($finalUrl),
+            escape($link['name']),
+            $target,
+            escape($link['icon'])
+        );
+        
+    } catch (Exception $e) {
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log('getSocialLink error: ' . $e->getMessage());
+        }
+        return '';
+    }
+}
+
+/**
+ * Site ayarını getir
+ * 
+ * @param string $key Ayar anahtarı
+ * @param mixed $default Varsayılan değer
+ * @return mixed Ayar değeri veya varsayılan
+ */
+function getSetting($key, $default = null) {
+    static $settings = null;
+    
+    // İlk çağrıda tüm ayarları yükle (performance için)
+    if ($settings === null) {
+        try {
+            $db = Database::getInstance();
+            $rows = $db->fetchAll("SELECT setting_key, setting_value FROM site_settings WHERE is_active = 1");
+            $settings = [];
+            foreach ($rows as $row) {
+                $settings[$row['setting_key']] = $row['setting_value'];
+            }
+        } catch (Exception $e) {
+            if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                error_log('getSetting error: ' . $e->getMessage());
+            }
+            $settings = [];
+        }
+    }
+    
+    return isset($settings[$key]) ? $settings[$key] : $default;
+}
+
+/**
+ * İletişim bilgilerini getir
+ * 
+ * @return array İletişim bilgileri
+ */
+function getContactInfo() {
+    return [
+        'email' => getSetting('contact_email', 'info@loomix.click'),
+        'email_editor' => getSetting('contact_email_editor', 'editor@loomix.click'),
+        'phone' => getSetting('contact_phone', ''),
+        'address' => getSetting('contact_address', ''),
+        'twitter_handle' => getSetting('contact_twitter_handle', '@LooMixClick'),
+        'facebook_page' => getSetting('contact_facebook_page', 'LooMix.Click'),
+        'instagram_handle' => getSetting('contact_instagram_handle', '@loomixclick'),
+        'linkedin_page' => getSetting('contact_linkedin_page', 'LooMix Click')
+    ];
+}
 ?>

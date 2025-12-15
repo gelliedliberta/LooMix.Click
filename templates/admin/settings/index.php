@@ -30,11 +30,11 @@
                 <a class="list-group-item list-group-item-action" data-bs-toggle="pill" href="#seo-settings">
                     <i class="fas fa-search me-2"></i>SEO Ayarları
                 </a>
-                <a class="list-group-item list-group-item-action" data-bs-toggle="pill" href="#social-settings">
-                    <i class="fab fa-facebook me-2"></i>Sosyal Medya
-                </a>
                 <a class="list-group-item list-group-item-action" data-bs-toggle="pill" href="#ads-settings">
                     <i class="fas fa-ad me-2"></i>Reklam Ayarları
+                </a>
+                <a class="list-group-item list-group-item-action" data-bs-toggle="pill" href="#contact-settings">
+                    <i class="fas fa-address-book me-2"></i>İletişim Bilgileri
                 </a>
                 <a class="list-group-item list-group-item-action" data-bs-toggle="pill" href="#email-settings">
                     <i class="fas fa-envelope me-2"></i>E-posta Ayarları
@@ -230,73 +230,6 @@
                     </div>
                 </div>
 
-                <!-- Social Media Settings -->
-                <div class="tab-pane fade" id="social-settings">
-                    <div class="data-table">
-                        <div class="p-3 border-bottom">
-                            <h5 class="mb-0">
-                                <i class="fas fa-share-alt me-2"></i>
-                                Sosyal Medya Hesapları
-                            </h5>
-                        </div>
-                        <div class="p-3">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="facebook_url" class="form-label">
-                                            <i class="fab fa-facebook text-primary me-2"></i>Facebook
-                                        </label>
-                                        <input type="url" class="form-control" id="facebook_url" name="facebook_url" 
-                                               value="<?= escape($settings['facebook_url'] ?? '') ?>" 
-                                               placeholder="https://facebook.com/sayfaniz">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="twitter_url" class="form-label">
-                                            <i class="fab fa-twitter text-info me-2"></i>Twitter
-                                        </label>
-                                        <input type="url" class="form-control" id="twitter_url" name="twitter_url" 
-                                               value="<?= escape($settings['twitter_url'] ?? '') ?>" 
-                                               placeholder="https://twitter.com/hesabiniz">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="instagram_url" class="form-label">
-                                            <i class="fab fa-instagram text-warning me-2"></i>Instagram
-                                        </label>
-                                        <input type="url" class="form-control" id="instagram_url" name="instagram_url" 
-                                               value="<?= escape($settings['instagram_url'] ?? '') ?>" 
-                                               placeholder="https://instagram.com/hesabiniz">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="youtube_url" class="form-label">
-                                            <i class="fab fa-youtube text-danger me-2"></i>YouTube
-                                        </label>
-                                        <input type="url" class="form-control" id="youtube_url" name="youtube_url" 
-                                               value="<?= escape($settings['youtube_url'] ?? '') ?>" 
-                                               placeholder="https://youtube.com/@kanaliniz">
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="enable_social_sharing" name="enable_social_sharing" 
-                                       value="1" <?= !empty($settings['enable_social_sharing']) ? 'checked' : '' ?>>
-                                <label class="form-check-label" for="enable_social_sharing">
-                                    <i class="fas fa-share me-1"></i>Sosyal Medya Paylaşım Butonları
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Advertisement Settings -->
                 <div class="tab-pane fade" id="ads-settings">
                     <div class="data-table mb-4">
@@ -360,6 +293,136 @@
                     </div>
                 </div>
 
+                <!-- Contact Settings -->
+                <div class="tab-pane fade" id="contact-settings">
+                    <div class="data-table mb-4">
+                        <div class="p-3 border-bottom">
+                            <h5 class="mb-0">
+                                <i class="fas fa-envelope me-2"></i>
+                                E-posta Adresleri
+                            </h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_email" class="form-label">Genel İletişim E-posta</label>
+                                        <input type="email" class="form-control" id="contact_email" name="contact_email" 
+                                               value="<?= escape($settings['contact_email'] ?? 'info@loomix.click') ?>" 
+                                               placeholder="info@loomix.click">
+                                        <small class="text-muted">İletişim sayfasında gösterilecek</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_email_editor" class="form-label">Editör E-posta</label>
+                                        <input type="email" class="form-control" id="contact_email_editor" name="contact_email_editor" 
+                                               value="<?= escape($settings['contact_email_editor'] ?? 'editor@loomix.click') ?>" 
+                                               placeholder="editor@loomix.click">
+                                        <small class="text-muted">İçerik ve editör ekibi için</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table mb-4">
+                        <div class="p-3 border-bottom">
+                            <h5 class="mb-0">
+                                <i class="fas fa-phone me-2"></i>
+                                İletişim Bilgileri
+                            </h5>
+                        </div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_phone" class="form-label">Telefon</label>
+                                        <input type="tel" class="form-control" id="contact_phone" name="contact_phone" 
+                                               value="<?= escape($settings['contact_phone'] ?? '') ?>" 
+                                               placeholder="+90 XXX XXX XX XX">
+                                        <small class="text-muted">Opsiyonel</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_address" class="form-label">Adres</label>
+                                        <textarea class="form-control" id="contact_address" name="contact_address" 
+                                                  rows="2" placeholder="İstanbul, Türkiye"><?= escape($settings['contact_address'] ?? '') ?></textarea>
+                                        <small class="text-muted">Opsiyonel</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="data-table">
+                        <div class="p-3 border-bottom">
+                            <h5 class="mb-0">
+                                <i class="fas fa-share-alt me-2"></i>
+                                Sosyal Medya Kullanıcı Adları
+                            </h5>
+                            <p class="mb-0 small text-muted mt-1">
+                                İletişim sayfasında gösterilecek kullanıcı adları. URL'ler Sosyal Medya Yönetimi'nden düzenlenir.
+                            </p>
+                        </div>
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_twitter_handle" class="form-label">
+                                            <i class="fab fa-twitter text-info me-2"></i>Twitter/X Kullanıcı Adı
+                                        </label>
+                                        <input type="text" class="form-control" id="contact_twitter_handle" name="contact_twitter_handle" 
+                                               value="<?= escape($settings['contact_twitter_handle'] ?? '@LooMixClick') ?>" 
+                                               placeholder="@LooMixClick">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_facebook_page" class="form-label">
+                                            <i class="fab fa-facebook text-primary me-2"></i>Facebook Sayfa Adı
+                                        </label>
+                                        <input type="text" class="form-control" id="contact_facebook_page" name="contact_facebook_page" 
+                                               value="<?= escape($settings['contact_facebook_page'] ?? 'LooMix.Click') ?>" 
+                                               placeholder="LooMix.Click">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_instagram_handle" class="form-label">
+                                            <i class="fab fa-instagram text-danger me-2"></i>Instagram Kullanıcı Adı
+                                        </label>
+                                        <input type="text" class="form-control" id="contact_instagram_handle" name="contact_instagram_handle" 
+                                               value="<?= escape($settings['contact_instagram_handle'] ?? '@loomixclick') ?>" 
+                                               placeholder="@loomixclick">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="contact_linkedin_page" class="form-label">
+                                            <i class="fab fa-linkedin text-primary me-2"></i>LinkedIn Sayfa Adı
+                                        </label>
+                                        <input type="text" class="form-control" id="contact_linkedin_page" name="contact_linkedin_page" 
+                                               value="<?= escape($settings['contact_linkedin_page'] ?? 'LooMix Click') ?>" 
+                                               placeholder="LooMix Click">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Not:</strong> Sosyal medya URL'lerini düzenlemek için 
+                                <a href="<?= url('/admin/sosyal-medya') ?>" class="alert-link">Sosyal Medya Yönetimi</a> 
+                                sayfasını kullanın.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Email Settings -->
                 <div class="tab-pane fade" id="email-settings">
                     <div class="data-table">

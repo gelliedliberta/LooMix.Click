@@ -1227,7 +1227,10 @@ class AdminController extends Controller {
             'google_adsense_id', 'auto_ads', 'ad_blocker_detection', 'enable_ads', 'lazy_load_ads',
             'smtp_host', 'smtp_port', 'smtp_username', 'smtp_password', 'smtp_encryption',
             'enable_cache', 'cache_duration', 'debug_mode',
-            'max_login_attempts', 'enable_csrf', 'enable_rate_limit'
+            'max_login_attempts', 'enable_csrf', 'enable_rate_limit',
+            // İletişim bilgileri
+            'contact_email', 'contact_email_editor', 'contact_phone', 'contact_address',
+            'contact_twitter_handle', 'contact_facebook_page', 'contact_instagram_handle', 'contact_linkedin_page'
         ];
 
         // Sadece gönderilen (var olan) alanları kaydet
@@ -1949,6 +1952,190 @@ class AdminController extends Controller {
         }
         
         return $url;
+    }
+    
+    // ================================================
+    // SOSYAL MEDYA YÖNETİMİ
+    // ================================================
+    
+    /**
+     * Sosyal medya linkleri yönetim sayfası
+     */
+    public function socialMedia() {
+        $this->requireAdmin();
+        
+        $socialModel = new SocialMedia();
+        $links = $socialModel->getAll();
+        
+        $view = new View();
+        $view->render('admin/social-media/index', [
+            'pageTitle' => 'Sosyal Medya Yönetimi - ' . SITE_NAME,
+            'links' => $links,
+            'currentUser' => $this->getCurrentUser(),
+            'csrfToken' => $this->generateCsrfToken()
+        ], 'admin');
+    }
+    
+    /**
+     * API: Sosyal medya linki getir
+     */
+    public function getSocialMediaById($id) {
+        $this->requireAdmin();
+        
+        $socialModel = new SocialMedia();
+        $link = $socialModel->getById($id);
+        
+        if (!$link) {
+            $this->json(['error' => 'Link bulunamadı'], 404);
+        }
+        
+        $this->json(['success' => true, 'link' => $link]);
+    }
+    
+    /**
+     * API: Sosyal medya linkini kaydet (yeni veya güncelle)
+     */
+    public function saveSocialMedia() {
+        $this->requireAdmin();
+        
+        try {
+            $data = [
+                'id' => $this->post('id'),
+                'platform' => $this->post('platform'),
+                'name' => $this->post('name'),
+                'icon' => $this->post('icon'),
+                'url' => $this->post('url'),
+                'is_active' => $this->post('is_active', 0),
+                'display_order' => $this->post('display_order', 0),
+                'show_in_header' => $this->post('show_in_header', 0),
+                'show_in_footer' => $this->post('show_in_footer', 0),
+                'color' => $this->post('color')
+            ];
+            
+            // Validasyon
+            if (empty($data['platform']) || empty($data['name']) || empty($data['icon'])) {
+                $this->json(['error' => 'Platform, isim ve ikon zorunludur'], 400);
+            }
+            
+            $socialModel = new SocialMedia();
+            $id = $socialModel->save($data);
+            
+            if ($id) {
+                $this->json([
+                    'success' => true,
+                    'message' => $data['id'] ? 'Link güncellendi' : 'Link oluşturuldu',
+                    'id' => $id
+                ]);
+            } else {
+                $this->json(['error' => 'Link kaydedilemedi'], 500);
+            }
+        } catch (Exception $e) {
+            $this->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * API: Sosyal medya linkini aktif/pasif yap
+     */
+    public function toggleSocialMediaStatus($id) {
+        $this->requireAdmin();
+        
+        $socialModel = new SocialMedia();
+        $result = $socialModel->toggleStatus($id);
+        
+        if ($result) {
+            $link = $socialModel->getById($id);
+            $this->json([
+                'success' => true,
+                'message' => 'Durum güncellendi',
+                'is_active' => $link['is_active']
+            ]);
+        } else {
+            $this->json(['error' => 'Durum güncellenemedi'], 500);
+        }
+    }
+    
+    /**
+     * API: Header'da gösterim durumunu değiştir
+     */
+    public function toggleSocialMediaHeader($id) {
+        $this->requireAdmin();
+        
+        $socialModel = new SocialMedia();
+        $result = $socialModel->toggleHeader($id);
+        
+        if ($result) {
+            $link = $socialModel->getById($id);
+            $this->json([
+                'success' => true,
+                'message' => 'Header durumu güncellendi',
+                'show_in_header' => $link['show_in_header']
+            ]);
+        } else {
+            $this->json(['error' => 'Durum güncellenemedi'], 500);
+        }
+    }
+    
+    /**
+     * API: Footer'da gösterim durumunu değiştir
+     */
+    public function toggleSocialMediaFooter($id) {
+        $this->requireAdmin();
+        
+        $socialModel = new SocialMedia();
+        $result = $socialModel->toggleFooter($id);
+        
+        if ($result) {
+            $link = $socialModel->getById($id);
+            $this->json([
+                'success' => true,
+                'message' => 'Footer durumu güncellendi',
+                'show_in_footer' => $link['show_in_footer']
+            ]);
+        } else {
+            $this->json(['error' => 'Durum güncellenemedi'], 500);
+        }
+    }
+    
+    /**
+     * API: Sosyal medya linkini sil
+     */
+    public function deleteSocialMedia($id) {
+        $this->requireAdmin();
+        
+        $socialModel = new SocialMedia();
+        
+        // RSS gibi sistem linklerini silme kontrolü
+        $link = $socialModel->getById($id);
+        if ($link && $link['platform'] === 'rss') {
+            $this->json(['error' => 'Sistem linkleri silinemez'], 400);
+        }
+        
+        $result = $socialModel->deleteLink($id);
+        
+        if ($result) {
+            $this->json(['success' => true, 'message' => 'Link silindi']);
+        } else {
+            $this->json(['error' => 'Link silinemedi'], 500);
+        }
+    }
+    
+    /**
+     * API: Sıralamayı güncelle
+     */
+    public function updateSocialMediaOrder($id) {
+        $this->requireAdmin();
+        
+        $order = $this->post('order', 0);
+        
+        $socialModel = new SocialMedia();
+        $result = $socialModel->updateOrder($id, $order);
+        
+        if ($result) {
+            $this->json(['success' => true, 'message' => 'Sıra güncellendi']);
+        } else {
+            $this->json(['error' => 'Sıra güncellenemedi'], 500);
+        }
     }
 }
 ?>

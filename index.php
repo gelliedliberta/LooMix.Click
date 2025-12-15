@@ -163,6 +163,18 @@ $router->post('/admin/api/tags/save', 'AdminController@saveTag');
 $router->delete('/admin/api/tags/{id}/delete', 'AdminController@deleteTag');
 $router->delete('/admin/api/tags/clean-unused', 'AdminController@cleanUnusedTags');
 
+// Sosyal medya yönetimi
+$router->get('/admin/sosyal-medya', 'AdminController@socialMedia');
+
+// Sosyal medya API'leri
+$router->get('/admin/api/social-media/{id}', 'AdminController@getSocialMediaById');
+$router->post('/admin/api/social-media/save', 'AdminController@saveSocialMedia');
+$router->post('/admin/api/social-media/{id}/toggle-status', 'AdminController@toggleSocialMediaStatus');
+$router->post('/admin/api/social-media/{id}/toggle-header', 'AdminController@toggleSocialMediaHeader');
+$router->post('/admin/api/social-media/{id}/toggle-footer', 'AdminController@toggleSocialMediaFooter');
+$router->post('/admin/api/social-media/{id}/update-order', 'AdminController@updateSocialMediaOrder');
+$router->delete('/admin/api/social-media/{id}/delete', 'AdminController@deleteSocialMedia');
+
 // Site ayarları
 $router->get('/admin/ayarlar', 'AdminController@settings');
 $router->post('/admin/api/settings/save', 'AdminController@saveSettings');
@@ -212,6 +224,43 @@ $router->notFound(function() {
             'path' => $uri
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return;
+    }
+
+    // Etiket kontrolü yap - Eğer URL basit bir slug gibi görünüyorsa
+    // ve bu slug bir etiket ise, otomatik olarak etiket sayfasına yönlendir
+    $path = parse_url($uri, PHP_URL_PATH);
+    
+    // Base path'i çıkar (XAMPP için - case-insensitive)
+    $scriptPath = dirname($_SERVER['SCRIPT_NAME']);
+    
+    // Base path temizleme (case-insensitive ve daha robust)
+    if ($scriptPath !== '/' && $scriptPath !== '') {
+        // Case-insensitive base path temizleme
+        if (stripos($path, $scriptPath) === 0) {
+            $path = substr($path, strlen($scriptPath));
+        }
+    }
+    
+    // Baştan ve sondan slash'leri temizle
+    $path = trim($path, '/');
+    
+    // Eğer path basit bir slug gibi görünüyorsa (slash içermiyor ve boş değilse)
+    if (!empty($path) && strpos($path, '/') === false) {
+        try {
+            $tagModel = new Tag();
+            $tag = $tagModel->getBySlug($path);
+            
+            // Etiket bulunduysa, etiket sayfasına yönlendir (301 - Kalıcı yönlendirme)
+            if ($tag) {
+                header("Location: " . url('/etiket/' . $tag['slug']), true, 301);
+                exit();
+            }
+        } catch (Exception $e) {
+            // Hata durumunda sessizce devam et, normal 404 göster
+            if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                error_log('Tag check error in 404 handler: ' . $e->getMessage());
+            }
+        }
     }
 
     $controller = new ErrorController();
