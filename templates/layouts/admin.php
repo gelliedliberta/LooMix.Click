@@ -350,7 +350,7 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= url('/admin/etiketler') ?>">
+                        <a class="nav-link <?= strpos($pageTitle ?? '', 'Etiket') !== false ? 'active' : '' ?>" href="<?= url('/admin/etiketler') ?>">
                             <i class="fas fa-tags"></i>
                             Etiketler
                         </a>

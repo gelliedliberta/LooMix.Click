@@ -212,10 +212,18 @@ class Tag extends Model {
      * Etiket bulma veya oluşturma
      */
     public function findOrCreate($name) {
+        // Etiket adını temizle
+        $cleanName = cleanTagName($name);
+        
+        // Temizlendikten sonra boşsa geri dön
+        if (empty($cleanName)) {
+            return null;
+        }
+        
         // Önce etiketin var olup olmadığını kontrol et
         $existing = $this->db->fetch(
             "SELECT * FROM {$this->table} WHERE name = :name",
-            ['name' => trim($name)]
+            ['name' => $cleanName]
         );
         
         if ($existing) {
@@ -223,10 +231,10 @@ class Tag extends Model {
         }
         
         // Yoksa yeni etiket oluştur
-        $slug = $this->createUniqueSlug($name);
+        $slug = $this->createUniqueSlug($cleanName);
         
         $tagId = $this->create([
-            'name' => trim($name),
+            'name' => $cleanName,
             'slug' => $slug,
             'color' => '#6c757d',
             'usage_count' => 0,
@@ -283,7 +291,12 @@ class Tag extends Model {
                 $tagName = trim($tagName);
                 if (empty($tagName)) continue;
                 
+                // Etiket oluştur (otomatik olarak temizlenir)
                 $tag = $this->findOrCreate($tagName);
+                
+                // Etiket oluşturulamazsa (boş veya geçersiz) atla
+                if (!$tag) continue;
+                
                 $this->attachToNews($tag['id'], $newsId);
             }
         }

@@ -4,7 +4,7 @@
         <i class="fas fa-tags me-2"></i>
         Etiket Yönetimi
     </h1>
-    <div class="page-actions">
+    <div class="page-actions d-flex gap-2">
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tagModal">
             <i class="fas fa-plus me-2"></i>Yeni Etiket
         </button>
@@ -16,34 +16,45 @@
 
 <!-- Filter & Search -->
 <div class="data-table mb-4">
+    <div class="p-3 bg-light border-bottom">
+        <h6 class="mb-3"><i class="fas fa-filter me-2"></i>Filtreleme & Arama</h6>
+    </div>
     <div class="p-3">
-        <form class="row g-3" method="GET">
-            <div class="col-md-4">
-                <input type="text" class="form-control" name="search" 
-                       value="<?= escape($currentFilters['search'] ?? '') ?>"
-                       placeholder="Etiket ara...">
+        <form class="row g-3" method="GET" action="<?= url('/admin/etiketler') ?>">
+            <div class="col-12 col-md-5">
+                <label for="tagSearch" class="form-label small text-muted">Arama</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="tagSearch" name="search" 
+                           value="<?= escape($currentFilters['search'] ?? '') ?>"
+                           placeholder="Etiket adı veya açıklama ara...">
+                </div>
             </div>
-            <div class="col-md-3">
-                <select class="form-select" name="sort">
+            <div class="col-12 col-sm-6 col-md-3">
+                <label for="tagSort" class="form-label small text-muted">Sıralama</label>
+                <select class="form-select" id="tagSort" name="sort">
                     <option value="name" <?= ($currentFilters['sort'] ?? '') === 'name' ? 'selected' : '' ?>>Ad (A-Z)</option>
                     <option value="usage" <?= ($currentFilters['sort'] ?? '') === 'usage' ? 'selected' : '' ?>>Kullanım Sayısı</option>
                     <option value="recent" <?= ($currentFilters['sort'] ?? '') === 'recent' ? 'selected' : '' ?>>Son Eklenen</option>
                 </select>
             </div>
-            <div class="col-md-2">
-                <select class="form-select" name="limit">
+            <div class="col-12 col-sm-6 col-md-2">
+                <label for="tagLimit" class="form-label small text-muted">Göster</label>
+                <select class="form-select" id="tagLimit" name="limit">
                     <option value="50" <?= ($currentFilters['limit'] ?? 50) == 50 ? 'selected' : '' ?>>50</option>
                     <option value="100" <?= ($currentFilters['limit'] ?? 50) == 100 ? 'selected' : '' ?>>100</option>
                     <option value="200" <?= ($currentFilters['limit'] ?? 50) == 200 ? 'selected' : '' ?>>200</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-12 col-md-2 d-flex align-items-end">
                 <div class="btn-group w-100">
-                    <button type="submit" class="btn btn-outline-primary">
-                        <i class="fas fa-search me-1"></i>Filtrele
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Ara
                     </button>
-                    <a href="<?= url('/admin/etiketler') ?>" class="btn btn-outline-secondary">
-                        <i class="fas fa-times"></i>
+                    <a href="<?= url('/admin/etiketler') ?>" class="btn btn-outline-secondary" title="Filtreleri Temizle">
+                        <i class="fas fa-redo"></i>
                     </a>
                 </div>
             </div>
@@ -53,21 +64,28 @@
 
 <!-- Tags Grid -->
 <div class="data-table">
-    <div class="p-3 border-bottom">
-        <h5 class="mb-0">
-            Etiketler 
-            <span class="badge bg-secondary ms-2"><?= count($tags) ?></span>
-            <?php if (!empty($currentFilters['search'])): ?>
-                <small class="text-muted ms-2">"<?= escape($currentFilters['search']) ?>" için sonuçlar</small>
+    <div class="p-3 border-bottom bg-light">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2 text-primary"></i>Etiketler 
+                <span class="badge bg-primary ms-2"><?= count($tags) ?></span>
+                <?php if (!empty($currentFilters['search'])): ?>
+                    <small class="text-muted ms-2">"<?= escape($currentFilters['search']) ?>" için sonuçlar</small>
+                <?php endif; ?>
+            </h5>
+            <?php if ($pagination['total_count'] > 0): ?>
+                <small class="text-muted">
+                    Toplam <?= $pagination['total_count'] ?> etiket
+                </small>
             <?php endif; ?>
-        </h5>
+        </div>
     </div>
     
     <?php if (!empty($tags)): ?>
         <div class="p-3">
-            <div class="row">
+            <div class="row g-3">
                 <?php foreach ($tags as $tag): ?>
-                <div class="col-md-4 col-lg-3 mb-3">
+                <div class="col-12 col-sm-6 col-md-4 col-xl-3">
                     <div class="tag-card" data-tag-id="<?= $tag['id'] ?>">
                         <div class="tag-card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -138,26 +156,50 @@
             <!-- Pagination -->
             <?php if ($pagination['total_pages'] > 1): ?>
                 <div class="d-flex justify-content-center mt-4">
-                    <nav>
+                    <nav aria-label="Sayfa navigasyonu">
                         <ul class="pagination">
-                            <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
+                            <!-- Previous Button -->
+                            <?php if ($pagination['current_page'] > 1): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?= url('/admin/etiketler?page=' . ($pagination['current_page'] - 1) . (!empty($currentFilters['search']) ? '&search=' . urlencode($currentFilters['search']) : '') . (!empty($currentFilters['sort']) ? '&sort=' . $currentFilters['sort'] : '') . (!empty($currentFilters['limit']) ? '&limit=' . $currentFilters['limit'] : '')) ?>" aria-label="Önceki">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                            
+                            <!-- Page Numbers -->
+                            <?php 
+                            $startPage = max(1, $pagination['current_page'] - 2);
+                            $endPage = min($pagination['total_pages'], $pagination['current_page'] + 2);
+                            
+                            for ($i = $startPage; $i <= $endPage; $i++): 
+                            ?>
                                 <li class="page-item <?= $i === $pagination['current_page'] ? 'active' : '' ?>">
-                                    <a class="page-link" href="<?= url('/admin/etiketler?page=' . $i . '&' . http_build_query(array_filter($currentFilters, fn($v) => $v !== 'page'))) ?>">
+                                    <a class="page-link" href="<?= url('/admin/etiketler?page=' . $i . (!empty($currentFilters['search']) ? '&search=' . urlencode($currentFilters['search']) : '') . (!empty($currentFilters['sort']) ? '&sort=' . $currentFilters['sort'] : '') . (!empty($currentFilters['limit']) ? '&limit=' . $currentFilters['limit'] : '')) ?>">
                                         <?= $i ?>
                                     </a>
                                 </li>
                             <?php endfor; ?>
+                            
+                            <!-- Next Button -->
+                            <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                                <li class="page-item">
+                                    <a class="page-link" href="<?= url('/admin/etiketler?page=' . ($pagination['current_page'] + 1) . (!empty($currentFilters['search']) ? '&search=' . urlencode($currentFilters['search']) : '') . (!empty($currentFilters['sort']) ? '&sort=' . $currentFilters['sort'] : '') . (!empty($currentFilters['limit']) ? '&limit=' . $currentFilters['limit'] : '')) ?>" aria-label="Sonraki">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                         </ul>
                     </nav>
                 </div>
             <?php endif; ?>
         </div>
     <?php else: ?>
-        <div class="p-5 text-center text-muted">
-            <i class="fas fa-tags fa-4x mb-3 opacity-25"></i>
+        <div class="empty-state">
+            <i class="fas fa-tags"></i>
             <h4>Henüz etiket eklenmemiş</h4>
             <p>İçerikleri kategorize etmek için etiketler oluşturun.</p>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tagModal">
+            <button type="button" class="btn btn-primary btn-lg mt-3" data-bs-toggle="modal" data-bs-target="#tagModal">
                 <i class="fas fa-plus me-2"></i>İlk Etiketi Ekle
             </button>
         </div>
@@ -165,8 +207,8 @@
 </div>
 
 <!-- Quick Stats -->
-<div class="row mt-4">
-    <div class="col-md-3">
+<div class="row g-3 mt-4">
+    <div class="col-12 col-sm-6 col-lg-3">
         <div class="stats-card">
             <div class="stats-icon bg-primary">
                 <i class="fas fa-tags"></i>
@@ -175,7 +217,7 @@
             <p class="stats-label">Toplam Etiket</p>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-lg-3">
         <div class="stats-card">
             <div class="stats-icon bg-success">
                 <i class="fas fa-chart-line"></i>
@@ -184,7 +226,7 @@
             <p class="stats-label">Toplam Kullanım</p>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-lg-3">
         <div class="stats-card">
             <div class="stats-icon bg-info">
                 <i class="fas fa-newspaper"></i>
@@ -193,9 +235,9 @@
             <p class="stats-label">Etiketli Haber</p>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-lg-3">
         <div class="stats-card">
-            <div class="stats-icon bg-warning">
+            <div class="stats-icon bg-warning text-dark">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <h3 class="stats-value"><?= count(array_filter($tags, fn($t) => $t['usage_count'] === 0)) ?></h3>
@@ -278,52 +320,145 @@
 </div>
 
 <style>
+/* Tag Cards */
 .tag-card {
     border: 1px solid #dee2e6;
-    border-radius: 8px;
-    transition: all 0.2s;
+    border-radius: 10px;
+    transition: all 0.3s ease;
     height: 100%;
+    background: white;
+    overflow: hidden;
 }
 
 .tag-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(-3px);
+    border-color: var(--primary-color);
 }
 
 .tag-card-body {
-    padding: 1rem;
+    padding: 1.25rem;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
+.tag-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    word-break: break-word;
+}
+
 .tag-stats {
     margin: 1rem 0;
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 4px;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 8px;
 }
 
 .stat-value {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #495057;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
 }
 
 .stat-label {
     font-size: 0.75rem;
     color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     margin: 0;
 }
 
 .tag-description {
     flex: 1;
+    color: #6c757d;
+    font-size: 0.875rem;
+    line-height: 1.5;
 }
 
 .tag-meta {
     border-top: 1px solid #e9ecef;
-    padding-top: 0.5rem;
+    padding-top: 0.75rem;
     margin-top: auto;
+    font-size: 0.8rem;
+}
+
+/* Page Actions */
+.page-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Filter Section */
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ddd;
+}
+
+.form-label.small {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .page-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .page-actions .btn {
+        width: 100%;
+    }
+    
+    .tag-card {
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+    color: #adb5bd;
 }
 </style>
 
@@ -379,8 +514,13 @@ function createSlug(text) {
 
 // Edit tag
 function editTag(id) {
-    fetch(`/admin/api/tags/${id}`)
-        .then(response => response.json())
+    fetch(`<?= url('/admin/api/tags/') ?>${id}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('API yanıt vermedi');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 const tag = data.tag;
@@ -402,9 +542,12 @@ function editTag(id) {
                 
                 // Show modal
                 new bootstrap.Modal(document.getElementById('tagModal')).show();
+            } else {
+                throw new Error(data.message || 'Etiket bilgileri alınamadı');
             }
         })
         .catch(error => {
+            console.error('API Error:', error);
             showNotification('Etiket bilgileri alınırken hata oluştu: ' + error.message, 'error');
         });
 }
@@ -464,7 +607,7 @@ function saveTag() {
 // Delete tag
 function deleteTag(id, name) {
     if (confirm(`"${name}" etiketini silmek istediğinizden emin misiniz?\n\nBu etiket tüm haberlerden kaldırılacak.`)) {
-        fetch(`/admin/api/tags/${id}/delete`, {
+        fetch(`<?= url('/admin/api/tags/') ?>${id}/delete`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -473,7 +616,12 @@ function deleteTag(id, name) {
                 csrf_token: document.querySelector('[name="csrf_token"]').value 
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('API yanıt vermedi');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showNotification('Etiket başarıyla silindi', 'success');
@@ -485,6 +633,7 @@ function deleteTag(id, name) {
             }
         })
         .catch(error => {
+            console.error('Delete Error:', error);
             showNotification('Etiket silinirken hata oluştu: ' + error.message, 'error');
         });
     }

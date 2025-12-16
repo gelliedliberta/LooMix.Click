@@ -119,6 +119,38 @@ function cleanMetaContent($content) {
 }
 
 /**
+ * Etiket adını temizle - özel karakterleri kaldır
+ * Sadece harf, rakam ve boşluk bırak
+ * 
+ * @param string $tagName Temizlenecek etiket adı
+ * @return string Temizlenmiş etiket adı
+ */
+function cleanTagName($tagName) {
+    // Önce trim
+    $tagName = trim($tagName);
+    
+    // Boşsa geri dön
+    if (empty($tagName)) {
+        return '';
+    }
+    
+    // Türkçe karakterleri koru, özel karakterleri kaldır
+    // İzin verilen: a-z, A-Z, 0-9, Türkçe karakterler (ç, ğ, ı, ö, ş, ü, Ç, Ğ, İ, Ö, Ş, Ü) ve boşluk
+    $tagName = preg_replace('/[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ\s]/', '', $tagName);
+    
+    // Çoklu boşlukları tek boşluğa çevir
+    $tagName = preg_replace('/\s+/', ' ', $tagName);
+    
+    // Başındaki ve sonundaki boşlukları temizle
+    $tagName = trim($tagName);
+    
+    // İlk harfi büyük yap (Türkçe karakter destekli)
+    $tagName = mb_convert_case($tagName, MB_CASE_TITLE, 'UTF-8');
+    
+    return $tagName;
+}
+
+/**
  * Sayfa URL'si oluştur
  */
 function url($path = '') {

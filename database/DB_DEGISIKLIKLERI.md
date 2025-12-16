@@ -2,6 +2,49 @@
 
 Bu dosya, veritabanında yapılan tüm değişiklikleri kronolojik olarak özetler.
 
+## 2025-01-16 - Etiket Temizleme Sistemi
+
+### Değişiklikler
+- ✅ Yeni `cleanTagName()` fonksiyonu eklendi (`includes/functions.php`)
+- ✅ Tag Model'de otomatik temizleme entegrasyonu
+- ✅ AdminController'da etiket kaydetme sırasında temizleme
+- ✅ Migration script: `clean_tags.php` - Mevcut etiketleri temizler
+- ✅ Migration SQL: `008_clean_tag_names.sql`
+
+### Amaç
+Etiketlerdeki özel karakterleri (", ', , vb.) otomatik olarak kaldırır.
+- **Korunanlar**: Türkçe karakterler, Latin harfleri, rakamlar, boşluk
+- **Kaldırılanlar**: Noktalama, tırnak, virgül, özel karakterler
+
+### Etkilenen Dosyalar
+- `includes/functions.php` - cleanTagName() fonksiyonu
+- `app/models/Tag.php` - findOrCreate(), syncNewsTagsByNames()
+- `app/controllers/AdminController.php` - saveTag()
+- `database/migrations/clean_tags.php` - Temizleme script'i
+- `database/migrations/008_clean_tag_names.sql` - SQL migration
+- `database/migrations/README_TAG_CLEANING.md` - Dokümantasyon
+
+### Kullanım
+```bash
+# Mevcut etiketleri temizle
+php database/migrations/clean_tags.php
+```
+
+### Özellikler
+- ✅ Otomatik temizleme (yeni etiketler için)
+- ✅ Dublike yönetimi
+- ✅ Boş etiketleri silme
+- ✅ Slug otomatik güncelleme
+- ✅ Türkçe karakter desteği
+
+### Test
+```sql
+-- Temizlenecek etiketleri göster
+SELECT id, name FROM tags WHERE name REGEXP '[^a-zA-Z0-9çğıöşüÇĞİÖŞÜ ]';
+```
+
+---
+
 ## 2025-09-04
 - Başlangıç migration dosyaları yapılandırıldı (database/migration.sql → öneri: migrations/001_create_initial_tables.sql)
 - Örnek veriler database/sample_data.sql

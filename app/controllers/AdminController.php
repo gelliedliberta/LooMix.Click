@@ -12,7 +12,12 @@ class AdminController extends Controller {
         // Admin rotalarından login hariç hepsi authentication gerektirir
         $currentRoute = $this->getCurrentRoute();
         if (!in_array($currentRoute, ['/admin/login', '/admin/auth'])) {
-            $this->requireAdmin();
+            // API isteklerinde JSON error döndür
+            if (strpos($currentRoute, '/admin/api/') === 0) {
+                $this->requireAdminAPI();
+            } else {
+                $this->requireAdmin();
+            }
         }
 
         // Merkezi CSRF kontrolü: Admin API altında yazma işlemleri için zorunlu
@@ -22,6 +27,19 @@ class AdminController extends Controller {
             if (!$this->verifyCsrfToken($this->post('csrf_token'))) {
                 $this->json(['error' => 'CSRF token hatalı'], 400);
             }
+        }
+    }
+    
+    /**
+     * API istekleri için admin kontrolü (JSON döndürür)
+     */
+    private function requireAdminAPI() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        if (!isset($_SESSION[ADMIN_SESSION_NAME]) || $_SESSION[ADMIN_SESSION_NAME] !== true) {
+            $this->json(['error' => 'Yetkisiz erişim', 'redirect' => '/admin/login'], 401);
         }
     }
     
@@ -1057,8 +1075,11 @@ class AdminController extends Controller {
             return;
         }
         
+        // Etiket adını temizle (özel karakterleri kaldır)
+        $cleanedName = cleanTagName($this->post('name'));
+        
         $data = [
-            'name' => trim($this->post('name')),
+            'name' => $cleanedName,
             'slug' => trim($this->post('slug')),
             'description' => trim($this->post('description')),
             'color' => $this->post('color', '#6c757d'),
@@ -1071,7 +1092,7 @@ class AdminController extends Controller {
         // Validasyon
         $errors = [];
         if (empty($data['name'])) {
-            $errors['name'] = 'Etiket adı gereklidir';
+            $errors['name'] = 'Etiket adı gereklidir veya geçersiz karakterler içeriyor';
         }
         
         if (strlen($data['name']) > 50) {
