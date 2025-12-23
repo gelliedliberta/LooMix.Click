@@ -262,7 +262,7 @@
                 <div class="sidebar-widget mb-4">
                     <h3 class="widget-title h5 fw-bold mb-3 pb-2 border-bottom">
                         <i class="fas fa-fire text-danger me-2"></i>
-                        Popüler Haberler
+                        Popüler Haberler <small class="text-muted">(7g)</small>
                     </h3>
                     
                     <div class="popular-news-list">
@@ -284,7 +284,7 @@
                                 <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                 <div class="small text-muted">
                                     <i class="far fa-eye me-1"></i>
-                                    <?= number_format($popular['view_count']) ?> görüntülenme
+                                    <?= number_format((int)($popular['recent_views'] ?? 0)) ?> görüntülenme
                                 </div>
                                 <?php endif; ?>
                             </div>

@@ -22,7 +22,10 @@
                                 <div class="featured-image-wrapper position-relative overflow-hidden rounded-3" style="height: 400px;">
                                     <img src="<?= getImageUrl($mainFeatured['featured_image']) ?>" 
                                          alt="<?= escape($mainFeatured['title']) ?>" 
-                                         class="w-100 h-100 object-fit-cover">
+                                         class="w-100 h-100 object-fit-cover"
+                                         decoding="async"
+                                         loading="<?= $idx === 0 ? 'eager' : 'lazy' ?>"
+                                         fetchpriority="<?= $idx === 0 ? 'high' : 'auto' ?>">
                                     <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"></div>
                                     <div class="position-absolute bottom-0 start-0 p-4 w-100">
                                         <span class="badge bg-<?= $mainFeatured['category_color'] ?: 'primary' ?> mb-2">
@@ -207,7 +210,7 @@
                 <div class="sidebar-widget mb-4">
                     <h3 class="widget-title h5 fw-bold mb-3">
                         <i class="fas fa-fire text-danger me-2"></i>
-                        Popüler Haberler
+                        Popüler Haberler <small class="text-muted"></small>
                     </h3>
                     
                     <div class="popular-news-list">
@@ -229,7 +232,7 @@
                                 <?php if (defined('SHOW_VIEW_COUNTS') && SHOW_VIEW_COUNTS): ?>
                                 <div class="small text-muted">
                                     <i class="far fa-eye me-1"></i>
-                                    <?= number_format($popular['view_count']) ?> görüntülenme
+                                    <?= number_format((int)($popular['recent_views'] ?? 0)) ?> görüntülenme
                                 </div>
                                 <?php endif; ?>
                             </div>

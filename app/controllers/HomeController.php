@@ -52,6 +52,11 @@ class HomeController extends Controller {
         }
         
         $view = new View();
+        // LCP image (Ana sayfa): slider'daki ilk haber görselini preload etmek için
+        $lcpImage = null;
+        if (!empty($featuredNews) && !empty($featuredNews[0]['featured_image'])) {
+            $lcpImage = getImageUrl($featuredNews[0]['featured_image']);
+        }
         $view->render('home/index', [
             'pageTitle' => SITE_NAME . ' - ' . SITE_DESCRIPTION,
             'metaDescription' => SITE_DESCRIPTION,
@@ -62,7 +67,8 @@ class HomeController extends Controller {
             'popularNews' => $popularNews,
             'breakingNews' => $breakingNews,
             'categories' => $categories,
-            'isHomePage' => true
+            'isHomePage' => true,
+            'lcpImage' => $lcpImage
         ], 'main');
     }
     

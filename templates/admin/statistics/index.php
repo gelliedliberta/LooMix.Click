@@ -16,6 +16,22 @@
     </div>
 </div>
 
+<?php if (!empty($isPrint)): ?>
+    <style>
+        @media print {
+            .admin-sidebar, .admin-header, .page-actions { display: none !important; }
+            .admin-main { margin-left: 0 !important; }
+            .admin-content { padding: 0 !important; }
+            .data-table { box-shadow: none !important; }
+            a { text-decoration: none !important; color: inherit !important; }
+        }
+    </style>
+    <script>
+        // Print view: allow browser "Save as PDF" without extra dependencies
+        window.addEventListener('load', () => window.print());
+    </script>
+<?php endif; ?>
+
 <!-- Summary Stats -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-3">
@@ -23,12 +39,12 @@
             <div class="stats-icon bg-primary">
                 <i class="fas fa-newspaper"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['total_news'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="total_news"><?= number_format($stats['total_news'] ?? 0) ?></h3>
             <p class="stats-label">Toplam Haber</p>
             <div class="mt-2">
                 <small class="text-success">
                     <i class="fas fa-arrow-up me-1"></i>
-                    Bu ay: +<?= number_format($stats['news_this_month'] ?? 0) ?>
+                    Bu ay: +<span data-stat="news_this_month"><?= number_format($stats['news_this_month'] ?? 0) ?></span>
                 </small>
             </div>
         </div>
@@ -39,12 +55,12 @@
             <div class="stats-icon bg-info">
                 <i class="fas fa-eye"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['total_views'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="total_views"><?= number_format($stats['total_views'] ?? 0) ?></h3>
             <p class="stats-label">Toplam Görüntülenme</p>
             <div class="mt-2">
                 <small class="text-info">
                     <i class="fas fa-chart-line me-1"></i>
-                    Bugün: <?= number_format($stats['today_views'] ?? 0) ?>
+                    Bugün: <span data-stat="today_views"><?= number_format($stats['today_views'] ?? 0) ?></span>
                 </small>
             </div>
         </div>
@@ -55,12 +71,12 @@
             <div class="stats-icon bg-success">
                 <i class="fas fa-folder"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['total_categories'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="active_categories"><?= number_format($stats['active_categories'] ?? 0) ?></h3>
             <p class="stats-label">Aktif Kategori</p>
             <div class="mt-2">
                 <small class="text-muted">
                     <i class="fas fa-newspaper me-1"></i>
-                    Ortalama: <?= $stats['total_categories'] > 0 ? round(($stats['total_news'] ?? 0) / $stats['total_categories'], 1) : 0 ?> haber/kategori
+                    Ortalama: <?= ($stats['active_categories'] ?? 0) > 0 ? round(($stats['total_news'] ?? 0) / ($stats['active_categories'] ?? 1), 1) : 0 ?> haber/kategori
                 </small>
             </div>
         </div>
@@ -71,12 +87,12 @@
             <div class="stats-icon bg-warning">
                 <i class="fas fa-users"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['total_users'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="total_users"><?= number_format($stats['total_users'] ?? 0) ?></h3>
             <p class="stats-label">Sistem Kullanıcısı</p>
             <div class="mt-2">
                 <small class="text-warning">
                     <i class="fas fa-user-check me-1"></i>
-                    Aktif: <?= number_format($stats['active_users'] ?? 0) ?>
+                    Aktif: <span data-stat="active_users"><?= number_format($stats['active_users'] ?? 0) ?></span>
                 </small>
             </div>
         </div>
@@ -85,39 +101,38 @@
 
 <!-- Charts Row -->
 <div class="row mb-4">
-    <!-- Daily News Chart -->
-    <div class="col-lg-8">
+    <!-- Combined Advanced Chart -->
+    <div class="col-12">
         <div class="data-table">
             <div class="p-3 border-bottom">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <h5 class="mb-0">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Son 30 Gün Haber Sayıları
+                        <i class="fas fa-chart-area me-2"></i>
+                        Gelişmiş Analiz (Haber + Görüntülenme + Kategori)
                     </h5>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
                     <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary" data-period="7">7 Gün</button>
                         <button type="button" class="btn btn-outline-secondary active" data-period="30">30 Gün</button>
                         <button type="button" class="btn btn-outline-secondary" data-period="90">90 Gün</button>
                         <button type="button" class="btn btn-outline-secondary" data-period="365">1 Yıl</button>
                     </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="date" class="form-control form-control-sm" id="combinedStartDate" style="max-width: 165px;" aria-label="Start date">
+                        <span class="text-muted small">-</span>
+                        <input type="date" class="form-control form-control-sm" id="combinedEndDate" style="max-width: 165px;" aria-label="End date">
+                        <button type="button" class="btn btn-sm btn-primary" id="combinedApplyRange">
+                            Uygula
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="combinedClearRange" title="Tarih aralığını temizle">
+                            Temizle
+                        </button>
+                    </div>
+                    </div>
                 </div>
             </div>
-            <div class="p-3">
-                <canvas id="dailyNewsChart" height="100"></canvas>
-            </div>
-        </div>
-    </div>
-    
-    <!-- News by Category -->
-    <div class="col-lg-4">
-        <div class="data-table">
-            <div class="p-3 border-bottom">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-pie me-2"></i>
-                    Kategoriye Göre Dağılım
-                </h5>
-            </div>
-            <div class="p-3">
-                <canvas id="categoryChart" height="160"></canvas>
+            <div class="p-3" style="height: 460px;">
+                <canvas id="combinedChart" height="240"></canvas>
             </div>
         </div>
     </div>
@@ -175,49 +190,33 @@
         </div>
     </div>
     
-    <!-- Category Performance -->
+    <!-- Referrer Analysis (beside Most Viewed) -->
     <div class="col-lg-6">
         <div class="data-table mb-4">
             <div class="p-3 border-bottom">
                 <h5 class="mb-0">
-                    <i class="fas fa-folder-open me-2"></i>
-                    Kategori Performansı
+                    <i class="fas fa-link me-2"></i>
+                    Son 7 Gün Trafik Kaynakları (Referer)
                 </h5>
             </div>
-            <?php if (!empty($stats['news_by_category'])): ?>
+            <div class="p-3">
+            <?php if (!empty($stats['top_referrers'])): ?>
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th>Kategori</th>
-                                <th>Haber Sayısı</th>
-                                <th>Oran</th>
+                                <th>Kaynak</th>
+                                <th>Görüntülenme</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php 
-                            $totalCategoryNews = array_sum(array_column($stats['news_by_category'], 'count'));
-                            foreach ($stats['news_by_category'] as $category): 
-                            ?>
+                            <?php foreach ($stats['top_referrers'] as $row): ?>
                             <tr>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="color-box me-2" 
-                                             style="width: 12px; height: 12px; background-color: <?= $category['color'] ?: '#007bff' ?>; border-radius: 2px;"></div>
-                                        <?= escape($category['name']) ?>
-                                    </div>
+                                    <div class="small text-muted"><?= escape(truncateText((string)($row['referer'] ?? ''), 120)) ?></div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark"><?= number_format($category['count']) ?></span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="progress me-2" style="width: 60px; height: 6px;">
-                                            <div class="progress-bar" 
-                                                 style="width: <?= $totalCategoryNews > 0 ? round(($category['count'] / $totalCategoryNews) * 100, 1) : 0 ?>%; background-color: <?= $category['color'] ?: '#007bff' ?>"></div>
-                                        </div>
-                                        <small><?= $totalCategoryNews > 0 ? round(($category['count'] / $totalCategoryNews) * 100, 1) : 0 ?>%</small>
-                                    </div>
+                                    <span class="badge bg-info"><?= number_format((int)($row['views'] ?? 0)) ?></span>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -225,27 +224,11 @@
                     </table>
                 </div>
             <?php else: ?>
-                <div class="p-3 text-center text-muted">
-                    <i class="fas fa-folder fa-2x mb-2 opacity-25"></i>
-                    <p>Kategori verisi yok</p>
+                <div class="text-center text-muted">
+                    <i class="fas fa-link fa-2x mb-2 opacity-25"></i>
+                    <div>Referer verisi bulunamadı.</div>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-<!-- Daily Views Chart -->
-<div class="row">
-    <div class="col-12">
-        <div class="data-table">
-            <div class="p-3 border-bottom">
-                <h5 class="mb-0">
-                    <i class="fas fa-eye me-2"></i>
-                    Son 7 Gün Görüntülenme Analizi
-                </h5>
-            </div>
-            <div class="p-3">
-                <canvas id="dailyViewsChart" height="80"></canvas>
             </div>
         </div>
     </div>
@@ -321,126 +304,219 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
             
             const period = this.dataset.period;
-            updateDailyNewsChart(period);
+            updateCombinedChart(period);
+
+            // Clear date range inputs when period is selected
+            const s = document.getElementById('combinedStartDate');
+            const e = document.getElementById('combinedEndDate');
+            if (s) s.value = '';
+            if (e) e.value = '';
         });
     });
+
+    // Date range apply
+    const applyBtn = document.getElementById('combinedApplyRange');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', function() {
+            const s = document.getElementById('combinedStartDate');
+            const e = document.getElementById('combinedEndDate');
+            const startDate = s ? s.value : '';
+            const endDate = e ? e.value : '';
+
+            if (!startDate || !endDate) {
+                showNotification('Lütfen başlangıç ve bitiş tarihini seçin', 'error');
+                return;
+            }
+
+            // Remove active period highlight (custom range mode)
+            document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+
+            updateCombinedChartByRange(startDate, endDate);
+        });
+    }
+
+    // Date range clear (reset to 30 days)
+    const clearBtn = document.getElementById('combinedClearRange');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            const s = document.getElementById('combinedStartDate');
+            const e = document.getElementById('combinedEndDate');
+            if (s) s.value = '';
+            if (e) e.value = '';
+
+            const btn30 = document.querySelector('[data-period="30"]');
+            document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+            if (btn30) btn30.classList.add('active');
+            updateCombinedChart(30);
+        });
+    }
 });
 
 function initializeCharts() {
-    // Daily News Chart
-    const dailyNewsCtx = document.getElementById('dailyNewsChart').getContext('2d');
-    const dailyNewsChart = new Chart(dailyNewsCtx, {
-        type: 'line',
+    const initial = <?= json_encode($stats['combined_chart'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const ctx = document.getElementById('combinedChart').getContext('2d');
+    const chart = new Chart(ctx, {
         data: {
-            labels: <?= json_encode(array_column($stats['daily_news'] ?? [], 'date')) ?>,
-            datasets: [{
-                label: 'Haber Sayısı',
-                data: <?= json_encode(array_column($stats['daily_news'] ?? [], 'count')) ?>,
-                borderColor: '#007bff',
-                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
+            labels: initial.labels || [],
+            datasets: buildCombinedDatasets(initial)
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-    
-    // Category Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-    const categoryChart = new Chart(categoryCtx, {
-        type: 'doughnut',
-        data: {
-            labels: <?= json_encode(array_column($stats['news_by_category'] ?? [], 'name')) ?>,
-            datasets: [{
-                data: <?= json_encode(array_column($stats['news_by_category'] ?? [], 'count')) ?>,
-                backgroundColor: <?= json_encode(array_column($stats['news_by_category'] ?? [], 'color')) ?>
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 20
+                    labels: { usePointStyle: true, boxWidth: 10 }
+                },
+                tooltip: {
+                    callbacks: {
+                        footer: (items) => {
+                            // Show stacked total for news axis
+                            let totalNews = 0;
+                            items.forEach(i => {
+                                if (i.dataset && i.dataset.yAxisID === 'yNews' && i.dataset.type === 'bar') {
+                                    totalNews += Number(i.parsed.y || 0);
+                                }
+                            });
+                            return totalNews > 0 ? `Total News: ${totalNews}` : '';
+                        }
                     }
                 }
-            }
-        }
-    });
-    
-    // Daily Views Chart
-    const dailyViewsCtx = document.getElementById('dailyViewsChart').getContext('2d');
-    const dailyViewsChart = new Chart(dailyViewsCtx, {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode(array_column($stats['daily_views'] ?? [], 'date')) ?>,
-            datasets: [{
-                label: 'Görüntülenme',
-                data: <?= json_encode(array_column($stats['daily_views'] ?? [], 'views')) ?>,
-                backgroundColor: 'rgba(23, 162, 184, 0.8)',
-                borderColor: '#17a2b8',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
             },
-            plugins: {
-                legend: {
-                    display: false
+            scales: {
+                x: { stacked: true },
+                yNews: {
+                    type: 'linear',
+                    position: 'left',
+                    stacked: true,
+                    beginAtZero: true,
+                    title: { display: true, text: 'News Count' }
+                },
+                yViews: {
+                    type: 'linear',
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Views' }
                 }
             }
         }
     });
+
+    // store for updates
+    window.__combinedChart = chart;
+    window.__combinedChartFilter = { type: 'period', period: 30 };
 }
 
-function updateDailyNewsChart(period) {
-    fetch(`/admin/api/statistics/daily-news?period=${period}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update chart data
-                const chart = Chart.getChart('dailyNewsChart');
-                chart.data.labels = data.labels;
-                chart.data.datasets[0].data = data.data;
-                chart.update();
-            }
-        })
-        .catch(error => {
-            console.error('Chart update error:', error);
+function buildCombinedDatasets(payload) {
+    const labels = payload.labels || [];
+    const cat = payload.category_datasets || [];
+    const totalNews = payload.total_news || [];
+    const views = payload.daily_views || [];
+
+    const datasets = [];
+
+    // Stacked bars per category
+    cat.forEach((d) => {
+        datasets.push({
+            type: 'bar',
+            label: d.label,
+            data: d.data || new Array(labels.length).fill(0),
+            backgroundColor: d.color || '#adb5bd',
+            borderWidth: 0,
+            stack: 'news',
+            yAxisID: 'yNews'
         });
+    });
+
+    // Total news line
+    datasets.push({
+        type: 'line',
+        label: 'Total News',
+        data: totalNews,
+        borderColor: '#0d6efd',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+        yAxisID: 'yNews'
+    });
+
+    // Views line (right axis)
+    datasets.push({
+        type: 'line',
+        label: 'Views',
+        data: views,
+        borderColor: '#17a2b8',
+        backgroundColor: 'rgba(23, 162, 184, 0.10)',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.35,
+        yAxisID: 'yViews'
+    });
+
+    return datasets;
+}
+
+function updateCombinedChart(period) {
+    window.__combinedChartFilter = { type: 'period', period: Number(period) || 30 };
+    fetch(`<?= url('/admin/api/statistics/combined-chart') ?>?period=${period}`)
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success || !res.data) return;
+            const chart = window.__combinedChart;
+            if (!chart) return;
+
+            chart.data.labels = res.data.labels || [];
+            chart.data.datasets = buildCombinedDatasets(res.data);
+            chart.update();
+        })
+        .catch(err => console.error('Combined chart update error:', err));
+}
+
+function updateCombinedChartByRange(startDate, endDate) {
+    window.__combinedChartFilter = { type: 'range', start_date: startDate, end_date: endDate };
+    const qs = new URLSearchParams({ start_date: startDate, end_date: endDate });
+    fetch(`<?= url('/admin/api/statistics/combined-chart') ?>?${qs.toString()}`)
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success || !res.data) {
+                if (res && res.error) {
+                    showNotification(res.error, 'error');
+                }
+                return;
+            }
+            const chart = window.__combinedChart;
+            if (!chart) return;
+
+            chart.data.labels = res.data.labels || [];
+            chart.data.datasets = buildCombinedDatasets(res.data);
+            chart.update();
+        })
+        .catch(err => console.error('Combined chart update (range) error:', err));
 }
 
 function exportReport(type) {
-    const url = `/admin/api/statistics/export?type=${type}`;
+    if (type === 'pdf') {
+        // Dependency-free PDF: open print view, user can "Save as PDF"
+        window.open('<?= url('/admin/istatistikler?print=1') ?>', '_blank');
+        return;
+    }
+    const filter = window.__combinedChartFilter || { type: 'period', period: 30 };
+    const qs = new URLSearchParams({ type: 'excel' });
+    if (filter.type === 'range' && filter.start_date && filter.end_date) {
+        qs.set('start_date', filter.start_date);
+        qs.set('end_date', filter.end_date);
+    } else {
+        const period = Number(filter.period || 30);
+        qs.set('period', String(period));
+    }
+
+    const url = `<?= url('/admin/api/statistics/export') ?>?${qs.toString()}`;
     const link = document.createElement('a');
     link.href = url;
-    link.download = `loomix-rapor-${new Date().toISOString().split('T')[0]}.${type}`;
+    link.download = `loomix-rapor-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
 }
 
@@ -451,8 +527,13 @@ setInterval(function() {
         .then(data => {
             if (data.success) {
                 // Update live stats
-                document.querySelector('[data-stat="today_views"]').textContent = data.stats.today_views.toLocaleString();
-                document.querySelector('[data-stat="total_views"]').textContent = data.stats.total_views.toLocaleString();
+                const todayViews = document.querySelector('[data-stat="today_views"]');
+                const totalViews = document.querySelector('[data-stat="total_views"]');
+                const activeUsers = document.querySelector('[data-stat="active_users"]');
+
+                if (todayViews) todayViews.textContent = Number(data.stats.today_views || 0).toLocaleString();
+                if (totalViews) totalViews.textContent = Number(data.stats.total_views || 0).toLocaleString();
+                if (activeUsers) activeUsers.textContent = Number(data.stats.active_users || 0).toLocaleString();
             }
         })
         .catch(error => {

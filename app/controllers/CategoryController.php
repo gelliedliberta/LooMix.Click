@@ -51,8 +51,8 @@ class CategoryController extends Controller {
         // Kategori breadcrumb
         $breadcrumb = $categoryModel->getBreadcrumb($category['id']);
         
-        // Popüler haberler (sidebar için)
-        $popularNews = $newsModel->getPopularNews(8);
+        // Popüler haberler (sidebar için) - Son 7 gün, kategoriye özel (alt kategoriler dahil)
+        $popularNews = $newsModel->getPopularNewsByCategory((int)$category['id'], 8, 7);
         
         // Son haberler
         $latestNews = $newsModel->getPublishedNews(8);

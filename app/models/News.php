@@ -80,6 +80,38 @@ class News extends Model {
         
         return $this->db->fetchAll($sql, ['days' => $days, 'limit' => $limit]);
     }
+
+    /**
+     * Kategoriye göre popüler haberleri getir (son X gün)
+     * - Alt kategoriler dahil edilir (tek seviye) => getPublishedNews ile uyumlu
+     *
+     * @param int $categoryId
+     * @param int $limit
+     * @param int $days
+     * @return array
+     */
+    public function getPopularNewsByCategory(int $categoryId, int $limit = 10, int $days = 7) {
+        // Alt kategoriler dahil: verilen kategori + çocukları (tek seviye)
+        $childIds = $this->db->fetchAll("SELECT id FROM categories WHERE parent_id = :pid", ['pid' => $categoryId]);
+        $ids = array_map(function($r){ return (int)$r['id']; }, $childIds);
+        $ids[] = (int)$categoryId;
+        $in = implode(',', array_map('intval', $ids));
+
+        $sql = "SELECT n.*, c.name as category_name, c.slug as category_slug,
+                COUNT(nv.id) as recent_views
+                FROM {$this->table} n
+                INNER JOIN categories c ON n.category_id = c.id
+                LEFT JOIN news_views nv ON n.id = nv.news_id
+                    AND nv.view_date >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
+                WHERE n.status = 'published'
+                  AND n.publish_date <= NOW()
+                  AND n.category_id IN ({$in})
+                GROUP BY n.id
+                ORDER BY recent_views DESC, n.publish_date DESC
+                LIMIT :limit";
+
+        return $this->db->fetchAll($sql, ['days' => $days, 'limit' => $limit]);
+    }
     
     /**
      * Slug ile haberi getir

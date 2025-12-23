@@ -49,6 +49,10 @@ class AdminController extends Controller {
     public function index() {
         // Dashboard istatistikleri
         $stats = $this->getDashboardStats();
+
+        // Son 7 gün en popüler haberler (dashboard sidebar için)
+        $newsModel = new News();
+        $popularNews7Days = $newsModel->getPopularNews(5, 7);
         
         // Son haberler
         $recentNews = $this->db->fetchAll("
@@ -68,6 +72,7 @@ class AdminController extends Controller {
             'pageTitle' => 'Admin Dashboard - ' . SITE_NAME,
             'stats' => $stats,
             'recentNews' => $recentNews,
+            'popularNews7Days' => $popularNews7Days,
             'recentComments' => $recentComments,
             'currentUser' => $this->getCurrentUser()
         ], 'admin');
@@ -1513,14 +1518,193 @@ class AdminController extends Controller {
      * İstatistikler
      */
     public function statistics() {
+        // Print view (PDF indirme için tarayıcı yazdır -> PDF)
+        $isPrint = (string)$this->get('print', '') === '1';
+
         // Genel istatistikler
         $stats = $this->getDetailedStats();
         
         $view = new View();
         $view->render('admin/statistics/index', [
             'pageTitle' => 'İstatistikler - Admin',
-            'stats' => $stats
+            'stats' => $stats,
+            'isPrint' => $isPrint
         ], 'admin');
+    }
+
+    /**
+     * Admin API: Dashboard istatistikleri (auto-refresh için)
+     * GET /admin/api/dashboard-stats
+     */
+    public function apiDashboardStats() {
+        $stats = $this->getDashboardStats();
+        $this->json(['success' => true, 'stats' => $stats]);
+    }
+
+    /**
+     * Admin API: Live istatistikler (istatistik sayfası auto-refresh)
+     * GET /admin/api/statistics/live-stats
+     */
+    public function apiStatisticsLiveStats() {
+        $stats = $this->getDashboardStats();
+        $this->json(['success' => true, 'stats' => $stats]);
+    }
+
+    /**
+     * Admin API: Günlük haber sayıları (grafik period değişimi)
+     * GET /admin/api/statistics/daily-news?period=30
+     */
+    public function apiStatisticsDailyNews() {
+        $period = (int)$this->get('period', 30);
+        if ($period < 7) { $period = 7; }
+        if ($period > 365) { $period = 365; }
+
+        $rows = $this->getDailyNewsCounts($period);
+
+        $this->json([
+            'success' => true,
+            'period' => $period,
+            'labels' => array_column($rows, 'date'),
+            'data' => array_column($rows, 'count')
+        ]);
+    }
+
+    /**
+     * Admin API: Günlük görüntülenmeler (grafik period değişimi)
+     * GET /admin/api/statistics/daily-views?period=30
+     */
+    public function apiStatisticsDailyViews() {
+        $period = (int)$this->get('period', 7);
+        if ($period < 7) { $period = 7; }
+        if ($period > 365) { $period = 365; }
+
+        $rows = $this->getDailyViewCounts($period);
+
+        $this->json([
+            'success' => true,
+            'period' => $period,
+            'labels' => array_column($rows, 'date'),
+            'data' => array_column($rows, 'views')
+        ]);
+    }
+
+    /**
+     * Admin API: Birleşik (advanced) grafik verisi
+     * - Stacked bar: günlük haber sayısı (kategori kırılımı)
+     * - Line: toplam haber sayısı
+     * - Line: günlük görüntülenme (2. eksen)
+     *
+     * GET /admin/api/statistics/combined-chart?period=30
+     */
+    public function apiStatisticsCombinedChart() {
+        $startDateRaw = (string)$this->get('start_date', '');
+        $endDateRaw = (string)$this->get('end_date', '');
+
+        // Date range mode (preferred when both dates provided)
+        if ($startDateRaw !== '' && $endDateRaw !== '') {
+            $startDate = $this->normalizeYmdDate($startDateRaw);
+            $endDate = $this->normalizeYmdDate($endDateRaw);
+
+            if (!$startDate || !$endDate) {
+                $this->json(['success' => false, 'error' => 'Invalid date format. Use YYYY-MM-DD'], 422);
+                return;
+            }
+
+            if (strtotime($startDate) > strtotime($endDate)) {
+                $this->json(['success' => false, 'error' => 'start_date must be <= end_date'], 422);
+                return;
+            }
+
+            $daySpan = (int)floor((strtotime($endDate) - strtotime($startDate)) / 86400) + 1;
+            if ($daySpan < 1 || $daySpan > 365) {
+                $this->json(['success' => false, 'error' => 'Date range must be between 1 and 365 days'], 422);
+                return;
+            }
+
+            $data = $this->getCombinedChartDataByRange($startDate, $endDate, 8);
+            $this->json(['success' => true, 'mode' => 'range', 'start_date' => $startDate, 'end_date' => $endDate, 'data' => $data]);
+            return;
+        }
+
+        // Period mode (default)
+        $period = (int)$this->get('period', 30);
+        if ($period < 7) { $period = 7; }
+        if ($period > 365) { $period = 365; }
+
+        $data = $this->getCombinedChartData($period, 8);
+        $this->json(['success' => true, 'mode' => 'period', 'period' => $period, 'data' => $data]);
+    }
+
+    /**
+     * Admin API: Excel export (CSV) / PDF export (print view)
+     * GET /admin/api/statistics/export?type=excel
+     */
+    public function exportStatisticsReport() {
+        $type = strtolower((string)$this->get('type', 'excel'));
+
+        // PDF: bağımlılıksız çözüm -> print view açtır
+        if ($type === 'pdf') {
+            // İstemci tarafında print view kullanılıyor; yine de uyum için yönlendiriyoruz.
+            $this->redirect('/admin/istatistikler?print=1');
+            return;
+        }
+
+        // Excel: CSV export
+        $startDateRaw = (string)$this->get('start_date', '');
+        $endDateRaw = (string)$this->get('end_date', '');
+
+        $period = (int)$this->get('period', 30);
+        if ($period < 7) { $period = 7; }
+        if ($period > 365) { $period = 365; }
+
+        // If date range is provided, export that range; otherwise export by period
+        if ($startDateRaw !== '' && $endDateRaw !== '') {
+            $startDate = $this->normalizeYmdDate($startDateRaw);
+            $endDate = $this->normalizeYmdDate($endDateRaw);
+
+            if (!$startDate || !$endDate) {
+                $this->json(['success' => false, 'error' => 'Invalid date format. Use YYYY-MM-DD'], 422);
+                return;
+            }
+            if (strtotime($startDate) > strtotime($endDate)) {
+                $this->json(['success' => false, 'error' => 'start_date must be <= end_date'], 422);
+                return;
+            }
+            $daySpan = (int)floor((strtotime($endDate) - strtotime($startDate)) / 86400) + 1;
+            if ($daySpan < 1 || $daySpan > 365) {
+                $this->json(['success' => false, 'error' => 'Date range must be between 1 and 365 days'], 422);
+                return;
+            }
+
+            $dailyNews = $this->getDailyNewsCountsByRange($startDate, $endDate);
+            $dailyViews = $this->getDailyViewCountsByRange($startDate, $endDate);
+        } else {
+            $dailyNews = $this->getDailyNewsCounts($period);
+            $dailyViews = $this->getDailyViewCounts($period);
+        }
+
+        // Gün bazında birleştir
+        $viewsMap = [];
+        foreach ($dailyViews as $row) {
+            $viewsMap[$row['date']] = (int)$row['views'];
+        }
+
+        header('Content-Type: text/csv; charset=utf-8');
+        $suffix = ($startDateRaw !== '' && $endDateRaw !== '') ? ('_' . $startDateRaw . '_to_' . $endDateRaw) : ('_son-' . $period . '-gun');
+        header('Content-Disposition: attachment; filename="istatistikler_' . date('Y-m-d') . $suffix . '.csv"');
+
+        $out = fopen('php://output', 'w');
+        // UTF-8 BOM (Excel TR için)
+        fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF));
+
+        fputcsv($out, ['Date', 'News Count', 'Views']);
+        foreach ($dailyNews as $row) {
+            $date = $row['date'];
+            fputcsv($out, [$date, (int)$row['count'], (int)($viewsMap[$date] ?? 0)]);
+        }
+
+        fclose($out);
+        exit;
     }
 
     /**
@@ -1689,9 +1873,11 @@ class AdminController extends Controller {
         
         // Kategoriler
         $stats['total_categories'] = $this->db->fetchColumn("SELECT COUNT(*) FROM categories");
+        $stats['active_categories'] = $this->db->fetchColumn("SELECT COUNT(*) FROM categories WHERE is_active = 1");
         
         // Kullanıcılar
         $stats['total_users'] = $this->db->fetchColumn("SELECT COUNT(*) FROM admin_users");
+        $stats['active_users'] = $this->db->fetchColumn("SELECT COUNT(*) FROM admin_users WHERE is_active = 1");
         
         // Bu ay eklenen haberler
         $stats['news_this_month'] = $this->db->fetchColumn("
@@ -1708,6 +1894,32 @@ class AdminController extends Controller {
             SELECT COUNT(*) FROM news_views 
             WHERE view_date = CURDATE()
         ") ?: 0;
+
+        // Son 7 gün / önceki 7 gün karşılaştırmaları (trend)
+        $today = date('Y-m-d');
+        $startLast7 = date('Y-m-d', strtotime('-6 days')); // dahil
+        $startPrev7 = date('Y-m-d', strtotime('-13 days')); // dahil
+        $endPrev7 = date('Y-m-d', strtotime('-7 days')); // dahil
+
+        $stats['views_last_7_days'] = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM news_views WHERE view_date BETWEEN :start AND :end",
+            ['start' => $startLast7, 'end' => $today]
+        );
+        $stats['views_prev_7_days'] = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM news_views WHERE view_date BETWEEN :start AND :end",
+            ['start' => $startPrev7, 'end' => $endPrev7]
+        );
+        $stats['views_change_pct'] = $this->calculateChangePercent($stats['views_prev_7_days'], $stats['views_last_7_days']);
+
+        $stats['news_last_7_days'] = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM news WHERE DATE(created_at) BETWEEN :start AND :end",
+            ['start' => $startLast7, 'end' => $today]
+        );
+        $stats['news_prev_7_days'] = (int)$this->db->fetchColumn(
+            "SELECT COUNT(*) FROM news WHERE DATE(created_at) BETWEEN :start AND :end",
+            ['start' => $startPrev7, 'end' => $endPrev7]
+        );
+        $stats['news_change_pct'] = $this->calculateChangePercent($stats['news_prev_7_days'], $stats['news_last_7_days']);
         
         return $stats;
     }
@@ -1718,23 +1930,8 @@ class AdminController extends Controller {
     private function getDetailedStats() {
         $stats = $this->getDashboardStats();
         
-        // Son 30 günün haber sayıları
-        $stats['daily_news'] = $this->db->fetchAll("
-            SELECT DATE(created_at) as date, COUNT(*) as count
-            FROM news
-            WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-            GROUP BY DATE(created_at)
-            ORDER BY date ASC
-        ");
-        
-        // Kategori bazında haber sayıları
-        $stats['news_by_category'] = $this->db->fetchAll("
-            SELECT c.name, c.color, COUNT(n.id) as count
-            FROM categories c
-            LEFT JOIN news n ON c.id = n.category_id
-            GROUP BY c.id
-            ORDER BY count DESC
-        ");
+        // Son 30 günün haber sayıları (eksik günler 0 ile doldurulur)
+        $stats['daily_news'] = $this->getDailyNewsCounts(30);
         
         // En çok okunan haberler
         $stats['most_viewed'] = $this->db->fetchAll("
@@ -1745,16 +1942,307 @@ class AdminController extends Controller {
             LIMIT 10
         ");
         
-        // Son 7 günün görüntülenme istatistikleri
-        $stats['daily_views'] = $this->db->fetchAll("
-            SELECT view_date as date, COUNT(*) as views
+        // Son 30 günün görüntülenme istatistikleri (eksik günler 0 ile doldurulur)
+        // Not: İstatistik ekranındaki "Son 30 Gün Haber Sayıları" grafiği ile paralel gösterim için 30 gün seçildi.
+        $stats['daily_views'] = $this->getDailyViewCounts(30);
+
+        // Son 7 gün referer analizi
+        $stats['top_referrers'] = $this->db->fetchAll("
+            SELECT referer, COUNT(*) as views
             FROM news_views
             WHERE view_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-            GROUP BY view_date
-            ORDER BY view_date ASC
+              AND referer IS NOT NULL
+              AND referer != ''
+            GROUP BY referer
+            ORDER BY views DESC
+            LIMIT 10
         ");
+
+        // Birleşik grafik verisi (default: 30 gün)
+        $stats['combined_chart'] = $this->getCombinedChartData(30, 8);
         
         return $stats;
+    }
+
+    /**
+     * Birleşik grafik datası üretir
+     *
+     * @return array{
+     *   labels: array<int, string>,
+     *   category_datasets: array<int, array{label:string,color:string,data:array<int,int>}>,
+     *   total_news: array<int,int>,
+     *   daily_views: array<int,int>
+     * }
+     */
+    private function getCombinedChartData(int $days, int $topCategoryLimit = 8): array {
+        $days = max(7, min(365, $days));
+        $topCategoryLimit = max(3, min(12, $topCategoryLimit));
+
+        $end = date('Y-m-d');
+        $start = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+        return $this->getCombinedChartDataByRange($start, $end, $topCategoryLimit);
+    }
+
+    /**
+     * Birleşik grafik datası üretir (tarih aralığı ile)
+     */
+    private function getCombinedChartDataByRange(string $startDate, string $endDate, int $topCategoryLimit = 8): array {
+        $topCategoryLimit = max(3, min(12, $topCategoryLimit));
+
+        // Labels (range list)
+        $labels = $this->buildDateLabels($startDate, $endDate);
+        $days = count($labels);
+
+        // Total news & views (aligned)
+        $dailyNewsRows = $this->getDailyNewsCountsByRange($startDate, $endDate);
+        $dailyViewRows = $this->getDailyViewCountsByRange($startDate, $endDate);
+        $totalNews = array_map(fn($r) => (int)$r['count'], $dailyNewsRows);
+        $dailyViews = array_map(fn($r) => (int)$r['views'], $dailyViewRows);
+
+        // Category counts grouped by date+category (for the same range)
+        $rows = $this->db->fetchAll("
+            SELECT DATE(n.created_at) as date,
+                   n.category_id as category_id,
+                   COALESCE(c.name, 'Unknown') as category_name,
+                   COALESCE(c.color, '#007bff') as category_color,
+                   COUNT(*) as count
+            FROM news n
+            LEFT JOIN categories c ON c.id = n.category_id
+            WHERE DATE(n.created_at) BETWEEN :start AND :end
+            GROUP BY DATE(n.created_at), n.category_id
+            ORDER BY date ASC
+        ", ['start' => $startDate, 'end' => $endDate]);
+
+        // Build category totals + per-day maps
+        $catTotals = [];        // [catId => total]
+        $catMeta = [];          // [catId => ['name'=>..., 'color'=>...]]
+        $catDaily = [];         // [catId => [date => count]]
+
+        foreach ($rows as $r) {
+            $cid = (int)$r['category_id'];
+            $date = (string)$r['date'];
+            $count = (int)$r['count'];
+
+            if (!isset($catTotals[$cid])) {
+                $catTotals[$cid] = 0;
+            }
+            $catTotals[$cid] += $count;
+            $catMeta[$cid] = [
+                'name' => (string)$r['category_name'],
+                'color' => (string)($r['category_color'] ?: '#007bff')
+            ];
+            $catDaily[$cid][$date] = $count;
+        }
+
+        // Pick top categories by total news count
+        arsort($catTotals);
+        $topCatIds = array_slice(array_keys($catTotals), 0, $topCategoryLimit, true);
+
+        // Build stacked bar datasets for top categories
+        $categoryDatasets = [];
+        $sumTopByIndex = array_fill(0, $days, 0);
+
+        foreach ($topCatIds as $cid) {
+            $meta = $catMeta[$cid] ?? ['name' => 'Unknown', 'color' => '#007bff'];
+            $data = [];
+            foreach ($labels as $idx => $d) {
+                $val = (int)($catDaily[$cid][$d] ?? 0);
+                $data[] = $val;
+                $sumTopByIndex[$idx] += $val;
+            }
+
+            $categoryDatasets[] = [
+                'label' => $meta['name'],
+                'color' => $meta['color'],
+                'data' => $data
+            ];
+        }
+
+        // "Other" dataset (remaining categories)
+        $other = [];
+        $hasOther = false;
+        foreach ($totalNews as $idx => $total) {
+            $val = max(0, (int)$total - (int)$sumTopByIndex[$idx]);
+            if ($val > 0) { $hasOther = true; }
+            $other[] = $val;
+        }
+        if ($hasOther) {
+            $categoryDatasets[] = [
+                'label' => 'Other',
+                'color' => '#adb5bd',
+                'data' => $other
+            ];
+        }
+
+        return [
+            'labels' => $labels,
+            'category_datasets' => $categoryDatasets,
+            'total_news' => $totalNews,
+            'daily_views' => $dailyViews
+        ];
+    }
+
+    /**
+     * Normalize a date string to Y-m-d or return null if invalid.
+     */
+    private function normalizeYmdDate(string $value): ?string {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        $dt = DateTime::createFromFormat('Y-m-d', $value);
+        $errors = DateTime::getLastErrors();
+        if (!$dt || ($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0) {
+            return null;
+        }
+        return $dt->format('Y-m-d');
+    }
+
+    /**
+     * Build inclusive date labels from start to end (Y-m-d).
+     *
+     * @return array<int,string>
+     */
+    private function buildDateLabels(string $startDate, string $endDate): array {
+        $labels = [];
+        $startTs = strtotime($startDate);
+        $endTs = strtotime($endDate);
+        if ($startTs === false || $endTs === false || $startTs > $endTs) {
+            return $labels;
+        }
+
+        for ($ts = $startTs; $ts <= $endTs; $ts += 86400) {
+            $labels[] = date('Y-m-d', $ts);
+        }
+        return $labels;
+    }
+
+    /**
+     * Daily news counts for a date range (fills missing days with 0)
+     *
+     * @return array<int, array{date:string, count:int}>
+     */
+    private function getDailyNewsCountsByRange(string $startDate, string $endDate): array {
+        $labels = $this->buildDateLabels($startDate, $endDate);
+
+        $rows = $this->db->fetchAll("
+            SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM news
+            WHERE DATE(created_at) BETWEEN :start AND :end
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        ", ['start' => $startDate, 'end' => $endDate]);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r['date']] = (int)$r['count'];
+        }
+
+        $out = [];
+        foreach ($labels as $d) {
+            $out[] = ['date' => $d, 'count' => (int)($map[$d] ?? 0)];
+        }
+        return $out;
+    }
+
+    /**
+     * Daily views counts for a date range (fills missing days with 0)
+     *
+     * @return array<int, array{date:string, views:int}>
+     */
+    private function getDailyViewCountsByRange(string $startDate, string $endDate): array {
+        $labels = $this->buildDateLabels($startDate, $endDate);
+
+        $rows = $this->db->fetchAll("
+            SELECT view_date as date, COUNT(*) as views
+            FROM news_views
+            WHERE view_date BETWEEN :start AND :end
+            GROUP BY view_date
+            ORDER BY view_date ASC
+        ", ['start' => $startDate, 'end' => $endDate]);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r['date']] = (int)$r['views'];
+        }
+
+        $out = [];
+        foreach ($labels as $d) {
+            $out[] = ['date' => $d, 'views' => (int)($map[$d] ?? 0)];
+        }
+        return $out;
+    }
+
+    /**
+     * Günlük haber sayıları (son N gün) - eksik günleri 0 ile doldurur
+     *
+     * @return array<int, array{date:string, count:int}>
+     */
+    private function getDailyNewsCounts(int $days): array {
+        $end = date('Y-m-d');
+        $start = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+
+        $rows = $this->db->fetchAll("
+            SELECT DATE(created_at) as date, COUNT(*) as count
+            FROM news
+            WHERE DATE(created_at) BETWEEN :start AND :end
+            GROUP BY DATE(created_at)
+            ORDER BY date ASC
+        ", ['start' => $start, 'end' => $end]);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r['date']] = (int)$r['count'];
+        }
+
+        $out = [];
+        for ($i = 0; $i < $days; $i++) {
+            $d = date('Y-m-d', strtotime($start . ' +' . $i . ' days'));
+            $out[] = ['date' => $d, 'count' => (int)($map[$d] ?? 0)];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Günlük görüntülenme sayıları (son N gün) - eksik günleri 0 ile doldurur
+     *
+     * @return array<int, array{date:string, views:int}>
+     */
+    private function getDailyViewCounts(int $days): array {
+        $end = date('Y-m-d');
+        $start = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+
+        $rows = $this->db->fetchAll("
+            SELECT view_date as date, COUNT(*) as views
+            FROM news_views
+            WHERE view_date BETWEEN :start AND :end
+            GROUP BY view_date
+            ORDER BY view_date ASC
+        ", ['start' => $start, 'end' => $end]);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r['date']] = (int)$r['views'];
+        }
+
+        $out = [];
+        for ($i = 0; $i < $days; $i++) {
+            $d = date('Y-m-d', strtotime($start . ' +' . $i . ' days'));
+            $out[] = ['date' => $d, 'views' => (int)($map[$d] ?? 0)];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Yüzdesel değişim hesapla
+     */
+    private function calculateChangePercent(int $previous, int $current): float {
+        if ($previous <= 0) {
+            return $current > 0 ? 100.0 : 0.0;
+        }
+        return round((($current - $previous) / $previous) * 100, 1);
     }
     
     /**

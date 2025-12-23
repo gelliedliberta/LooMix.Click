@@ -26,7 +26,7 @@
             <div class="stats-icon bg-primary">
                 <i class="fas fa-newspaper"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['published_news'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="published_news"><?= number_format($stats['published_news'] ?? 0) ?></h3>
             <p class="stats-label">Yayınlanan Haberler</p>
             <div class="progress mt-2" style="height: 4px;">
                 <div class="progress-bar bg-primary" role="progressbar" 
@@ -40,7 +40,7 @@
             <div class="stats-icon bg-warning">
                 <i class="fas fa-edit"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['draft_news'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="draft_news"><?= number_format($stats['draft_news'] ?? 0) ?></h3>
             <p class="stats-label">Taslak Haberler</p>
             <div class="progress mt-2" style="height: 4px;">
                 <div class="progress-bar bg-warning" role="progressbar" 
@@ -54,13 +54,20 @@
             <div class="stats-icon bg-info">
                 <i class="fas fa-eye"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['total_views'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="total_views"><?= number_format($stats['total_views'] ?? 0) ?></h3>
             <p class="stats-label">Toplam Görüntülenme</p>
             <div class="mt-2">
                 <small class="text-muted">
                     <i class="fas fa-chart-line me-1"></i>
-                    Bugün: <?= number_format($stats['today_views'] ?? 0) ?>
+                    Bugün: <span data-stat="today_views"><?= number_format($stats['today_views'] ?? 0) ?></span>
                 </small>
+                <div class="mt-1">
+                    <small class="<?= ($stats['views_change_pct'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
+                        <i class="fas fa-exchange-alt me-1"></i>
+                        Son 7 gün: <span data-stat="views_last_7_days"><?= number_format($stats['views_last_7_days'] ?? 0) ?></span>
+                        (<?= ($stats['views_change_pct'] ?? 0) >= 0 ? '+' : '' ?><span data-stat="views_change_pct"><?= number_format($stats['views_change_pct'] ?? 0, 1) ?></span>%)
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -70,13 +77,20 @@
             <div class="stats-icon bg-success">
                 <i class="fas fa-plus-circle"></i>
             </div>
-            <h3 class="stats-value"><?= number_format($stats['news_this_month'] ?? 0) ?></h3>
+            <h3 class="stats-value" data-stat="news_this_month"><?= number_format($stats['news_this_month'] ?? 0) ?></h3>
             <p class="stats-label">Bu Ay Eklenenler</p>
             <div class="mt-2">
                 <small class="text-success">
                     <i class="fas fa-arrow-up me-1"></i>
                     <?= date('F Y') ?>
                 </small>
+                <div class="mt-1">
+                    <small class="<?= ($stats['news_change_pct'] ?? 0) >= 0 ? 'text-success' : 'text-danger' ?>">
+                        <i class="fas fa-exchange-alt me-1"></i>
+                        Son 7 gün: <span data-stat="news_last_7_days"><?= number_format($stats['news_last_7_days'] ?? 0) ?></span>
+                        (<?= ($stats['news_change_pct'] ?? 0) >= 0 ? '+' : '' ?><span data-stat="news_change_pct"><?= number_format($stats['news_change_pct'] ?? 0, 1) ?></span>%)
+                    </small>
+                </div>
             </div>
         </div>
     </div>
@@ -180,6 +194,40 @@
     
     <!-- Quick Stats & Actions -->
     <div class="col-xl-4">
+        <!-- Popular News (Last 7 Days) -->
+        <div class="data-table mb-4">
+            <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-fire me-2"></i>
+                    Son 7 Gün Popüler
+                </h5>
+                <a href="<?= url('/admin/istatistikler') ?>" class="btn btn-sm btn-outline-danger">
+                    Analiz <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="p-3">
+                <?php if (!empty($popularNews7Days)): ?>
+                    <ol class="mb-0 ps-3">
+                        <?php foreach ($popularNews7Days as $item): ?>
+                            <li class="mb-2">
+                                <a class="text-decoration-none" href="<?= url('/haber/' . $item['slug']) ?>" target="_blank">
+                                    <?= escape(truncateText($item['title'], 70)) ?>
+                                </a>
+                                <div class="small text-muted">
+                                    <i class="fas fa-eye me-1"></i><?= number_format((int)($item['recent_views'] ?? 0)) ?> (7g)
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
+                <?php else: ?>
+                    <div class="text-center text-muted">
+                        <i class="fas fa-chart-line fa-2x mb-2 opacity-25"></i>
+                        <div>Popülerlik verisi henüz yok.</div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="data-table mb-4">
             <div class="p-3 border-bottom">
@@ -218,13 +266,13 @@
                 <div class="row g-2">
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded">
-                            <h6 class="mb-0"><?= $stats['total_categories'] ?? 0 ?></h6>
+                            <h6 class="mb-0" data-stat="total_categories"><?= $stats['total_categories'] ?? 0 ?></h6>
                             <small class="text-muted">Kategori</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center p-2 bg-light rounded">
-                            <h6 class="mb-0"><?= $stats['total_users'] ?? 0 ?></h6>
+                            <h6 class="mb-0" data-stat="total_users"><?= $stats['total_users'] ?? 0 ?></h6>
                             <small class="text-muted">Kullanıcı</small>
                         </div>
                     </div>

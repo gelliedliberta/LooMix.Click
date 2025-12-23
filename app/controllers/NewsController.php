@@ -77,6 +77,8 @@ class NewsController extends Controller {
             'metaDescription' => $metaDescription,
             'metaKeywords' => $metaKeywords,
             'metaImage' => $ogImage,
+            // LCP image (Haber detay): featured image preload etmek için
+            'lcpImage' => $ogImage,
             'canonicalUrl' => $canonicalUrl,
             'shareUrl' => $shareUrl,
             'structuredData' => $structuredData,

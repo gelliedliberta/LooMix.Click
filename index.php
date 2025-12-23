@@ -114,6 +114,8 @@ $router->get('/admin/cikis', 'AdminController@logout');
 $router->get('/admin/profil', 'AdminController@profile');
 $router->post('/admin/api/profile/save', 'AdminController@saveProfile');
 $router->post('/admin/api/profile/change-password', 'AdminController@changePassword');
+// Dashboard API
+$router->get('/admin/api/dashboard-stats', 'AdminController@apiDashboardStats');
 
 // Haber yönetimi
 $router->get('/admin/haberler', 'AdminController@news');
@@ -190,6 +192,12 @@ $router->get('/admin/api/revenue/export', 'AdminController@exportRevenueReport')
 
 // İstatistikler
 $router->get('/admin/istatistikler', 'AdminController@statistics');
+// İstatistik API'leri
+$router->get('/admin/api/statistics/live-stats', 'AdminController@apiStatisticsLiveStats');
+$router->get('/admin/api/statistics/daily-news', 'AdminController@apiStatisticsDailyNews');
+$router->get('/admin/api/statistics/daily-views', 'AdminController@apiStatisticsDailyViews');
+$router->get('/admin/api/statistics/combined-chart', 'AdminController@apiStatisticsCombinedChart');
+$router->get('/admin/api/statistics/export', 'AdminController@exportStatisticsReport');
 
 // API endpoint'leri
 $router->get('/api/latest-news', 'ApiController@latestNews');

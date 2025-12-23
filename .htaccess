@@ -58,23 +58,64 @@ RewriteRule ^assets/uploads/.*\.(php|php[0-9])$ - [F,L]
     AddOutputFilterByType DEFLATE text/css
     AddOutputFilterByType DEFLATE application/javascript
     AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE text/xml
 </IfModule>
 
-# Basit tarayıcı önbellek ayarları
+# Tarayıcı önbellek ayarları (Public site performansı)
 <IfModule mod_expires.c>
     ExpiresActive On
     
-    # Resimler - 1 hafta
-    ExpiresByType image/jpg "access plus 1 week"
-    ExpiresByType image/jpeg "access plus 1 week"
-    ExpiresByType image/png "access plus 1 week"
-    ExpiresByType image/gif "access plus 1 week"
-    ExpiresByType image/webp "access plus 1 week"
+    # Resimler - 30 gün
+    ExpiresByType image/jpg "access plus 30 days"
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/gif "access plus 30 days"
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType image/svg+xml "access plus 30 days"
+    ExpiresByType image/x-icon "access plus 30 days"
+    ExpiresByType image/vnd.microsoft.icon "access plus 30 days"
     
-    # CSS ve JavaScript - 1 gün
-    ExpiresByType text/css "access plus 1 day"
-    ExpiresByType application/javascript "access plus 1 day"
+    # CSS ve JavaScript - 7 gün
+    ExpiresByType text/css "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType text/javascript "access plus 7 days"
+
+    # Fontlar - 30 gün
+    ExpiresByType font/ttf "access plus 30 days"
+    ExpiresByType font/otf "access plus 30 days"
+    ExpiresByType font/woff "access plus 30 days"
+    ExpiresByType font/woff2 "access plus 30 days"
+    ExpiresByType application/font-woff "access plus 30 days"
 </IfModule>
+
+# Cache-Control header'ları (Expires yoksa bile işe yarar)
+<IfModule mod_headers.c>
+    # Sıkıştırma için vary
+    Header append Vary Accept-Encoding
+
+    # HTML: cache etme (dinamik)
+    <FilesMatch "\.(php|html)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
+    # Statikler: uzun cache
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=604800, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(woff2?|ttf|otf)$">
+        Header set Cache-Control "public, max-age=2592000, immutable"
+    </FilesMatch>
+
+    # ETag bazı shared-hosting senaryolarında cache'i bozabiliyor
+    Header unset ETag
+</IfModule>
+FileETag None
 
 # =====================================
 # Error Pages
